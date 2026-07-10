@@ -10,7 +10,7 @@ export function Hero() {
       await api.stats.cvDownload()
     } catch {}
     const a = document.createElement("a")
-    a.href = "/CV_KainwangRoger -master.pdf"
+    a.href = "/cv_kainwang_linkedin.pdf"
     a.download = "CV_KainwangRoger.pdf"
     a.click()
   }

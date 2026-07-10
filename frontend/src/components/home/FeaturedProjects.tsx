@@ -108,132 +108,154 @@ const defaultProjects: Project[] = [
   },
 ]
 
-function ProjectCarousel({ projects }: { projects: Project[] }) {
-  const [current, setCurrent] = useState(0)
-  const [direction, setDirection] = useState(1)
-
-  useEffect(() => {
-    if (projects.length === 0) return
-    const timer = setInterval(() => {
-      setDirection(1)
-      setCurrent((prev) => (prev + 1) % projects.length)
-    }, 3000)
-    return () => clearInterval(timer)
-  }, [projects.length])
-
-  const goTo = (i: number) => {
-    setDirection(i > current ? 1 : -1)
-    setCurrent(i)
-  }
-
-  if (projects.length === 0) return null
-
-  const project = projects[current]
-
-  const variants = {
-    enter: (dir: number) => ({ x: dir > 0 ? 300 : -300, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (dir: number) => ({ x: dir > 0 ? -300 : 300, opacity: 0 }),
-  }
-
-  return (
-    <div className="relative flex-1">
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => goTo((current - 1 + projects.length) % projects.length)}
-          className="z-10 shrink-0 rounded-full border border-border p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          aria-label="Précédent"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <div className="relative flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-md">
-          <div className="p-6 sm:p-8">
-            <AnimatePresence mode="wait" custom={direction}>
-              <motion.div
-                key={project.slug}
-                custom={direction}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-              >
-                <div className="-mx-6 -mt-6 mb-5 overflow-hidden sm:-mx-8 sm:-mt-8">
-                  <img
-                    src={projectImageUrl(project)}
-                    alt={project.title}
-                    className="h-48 w-full object-cover"
-                  />
-                </div>
-                <div className="mb-4 flex flex-wrap gap-2">
-                  {project.tech_stack.split(",").map((tag) => (
-                    <Badge key={tag.trim()}>{tag.trim()}</Badge>
-                  ))}
-                </div>
-                <h3 className="mb-2 text-xl font-bold">{project.title}</h3>
-                <p className="mb-5 text-sm text-muted-foreground">
-                  {project.description}
-                </p>
-                <Link
-                  href={`/projects/${project.slug}`}
-                  className="text-sm font-medium text-primary hover:underline"
-                >
-                  En savoir plus →
-                </Link>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
-        <button
-          onClick={() => goTo((current + 1) % projects.length)}
-          className="z-10 shrink-0 rounded-full border border-border p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          aria-label="Suivant"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </button>
-      </div>
-      <div className="mt-3 flex justify-center gap-2">
-        {projects.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => goTo(i)}
-            className={`h-2 rounded-full transition-all ${
-              i === current
-                ? "w-6 bg-primary"
-                : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
-            }`}
-            aria-label={`Projet ${i + 1}`}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
 export function FeaturedProjects() {
   const [projects, setProjects] = useState<Project[]>(defaultProjects)
+  const [index, setIndex] = useState(0)
 
   useEffect(() => {
     api.projects.featured()
       .then((apiProjects) => {
-        const seen = new Set(apiProjects.map((p) => p.slug))
-        const merged = [...apiProjects, ...defaultProjects.filter((p) => !seen.has(p.slug))]
-        setProjects(merged)
+        if (apiProjects.length > 0) {
+          const seen = new Set(apiProjects.map((p) => p.slug))
+          const merged = [...apiProjects, ...defaultProjects.filter((p) => !seen.has(p.slug))]
+          setProjects(merged)
+        }
       })
       .catch(() => {})
   }, [])
 
+  useEffect(() => {
+    if (projects.length === 0) return
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % projects.length)
+    }, 3000)
+    return () => clearInterval(timer)
+  }, [projects.length])
+
   if (projects.length === 0) return null
 
-  const mid = Math.ceil(projects.length / 2)
-  const left = projects.slice(0, mid)
-  const right = projects.slice(mid)
+  const nextIndex = (i: number) => (i + 1) % projects.length
+  const prevIndex = (i: number) => (i - 1 + projects.length) % projects.length
+
+  const goTo = (i: number) => {
+    setIndex(i)
+  }
+
+  const projectA = projects[index]
+  const projectB = projects[nextIndex(index)]
 
   return (
     <section className="mb-32">
       <div className="mx-auto flex max-w-5xl flex-col gap-6 md:flex-row">
-        <ProjectCarousel projects={left} />
-        <ProjectCarousel projects={right} />
+        <div className="relative flex-1">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => goTo(prevIndex(index))}
+              className="z-10 shrink-0 rounded-full border border-border p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="Précédent"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div className="relative flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-md">
+              <div className="p-6 sm:p-8">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={projectA.slug}
+                    initial={{ x: 300, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: -300, opacity: 0 }}
+                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                  >
+                    <div className="-mx-6 -mt-6 mb-5 overflow-hidden sm:-mx-8 sm:-mt-8">
+                      <img
+                        src={projectImageUrl(projectA)}
+                        alt={projectA.title}
+                        className="h-48 w-full object-cover"
+                      />
+                    </div>
+                    <div className="mb-4 flex flex-wrap gap-2">
+                      {projectA.tech_stack.split(",").map((tag) => (
+                        <Badge key={tag.trim()}>{tag.trim()}</Badge>
+                      ))}
+                    </div>
+                    <h3 className="mb-2 text-xl font-bold">{projectA.title}</h3>
+                    <p className="mb-5 text-sm text-muted-foreground">
+                      {projectA.description}
+                    </p>
+                    <Link
+                      href={`/projects/${projectA.slug}`}
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      En savoir plus →
+                    </Link>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 flex justify-center gap-2">
+            {projects.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goTo(i)}
+                className={`h-2 rounded-full transition-all ${
+                  i === index
+                    ? "w-6 bg-primary"
+                    : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                }`}
+                aria-label={`Projet ${i + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="relative flex-1">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-md">
+              <div className="p-6 sm:p-8">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={projectB.slug}
+                    initial={{ x: 300, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: -300, opacity: 0 }}
+                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                  >
+                    <div className="-mx-6 -mt-6 mb-5 overflow-hidden sm:-mx-8 sm:-mt-8">
+                      <img
+                        src={projectImageUrl(projectB)}
+                        alt={projectB.title}
+                        className="h-48 w-full object-cover"
+                      />
+                    </div>
+                    <div className="mb-4 flex flex-wrap gap-2">
+                      {projectB.tech_stack.split(",").map((tag) => (
+                        <Badge key={tag.trim()}>{tag.trim()}</Badge>
+                      ))}
+                    </div>
+                    <h3 className="mb-2 text-xl font-bold">{projectB.title}</h3>
+                    <p className="mb-5 text-sm text-muted-foreground">
+                      {projectB.description}
+                    </p>
+                    <Link
+                      href={`/projects/${projectB.slug}`}
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      En savoir plus →
+                    </Link>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+            <button
+              onClick={() => goTo(nextIndex(index))}
+              className="z-10 shrink-0 rounded-full border border-border p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="Suivant"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   )
