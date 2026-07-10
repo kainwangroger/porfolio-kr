@@ -24,13 +24,13 @@ graph TB
 
     subgraph API["Backend — FastAPI"]
         direction TB
-        AUTH["/auth/login<br/>Authentification JWT"]
+        AUTH["/auth/login<br/>Authentification JWT<br/>Rate limiting: 5/min"]
         PROJ["/projects<br/>CRUD projets"]
         SKILL["/skills<br/>CRUD compétences"]
         BLOG["/blog<br/>CRUD articles"]
         CONTACT["/contact<br/>Messages"]
         STATS["/stats<br/>Visites, CV, GitHub"]
-        HEALTH["/health<br/>Health check"]
+        HEALTH["/health<br/>Health check structuré"]
     end
 
     subgraph DB["Base de données"]
@@ -84,6 +84,8 @@ graph TB
 | **Backend** | FastAPI | 0.115.0 |
 | | SQLAlchemy | 2.0.36 |
 | | Alembic | 1.13.3 |
+| | slowapi | 0.1.9 |
+| | structlog | 24.4.0 |
 | | Python | 3.12+ |
 | **Base de données** | PostgreSQL | 16 (prod) |
 | | SQLite | (dev local) |
@@ -264,6 +266,8 @@ porfolio-kr/
 | `make migrate` | Appliquer les migrations Alembic |
 | `make seed` | Initialiser les données (admin, skills, projet exemple) |
 | `make import-github` | Importer les projets depuis GitHub |
+| `make test` | Lancer les tests unitaires |
+| `make lint` | Vérifier le code avec Ruff |
 
 ---
 

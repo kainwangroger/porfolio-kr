@@ -1,4 +1,4 @@
-.PHONY: dev-frontend dev-backend dev-docker install-frontend install-backend migrate seed import-github import-github-docker
+.PHONY: dev-frontend dev-backend dev-docker install-frontend install-backend migrate seed import-github import-github-docker test test-backend lint lint-backend
 
 dev-frontend:
 	cd frontend && npm run dev -- --webpack --port 3003
@@ -27,3 +27,12 @@ import-github:
 import-github-docker:
 	docker exec porfolio_kr-backend-1 python import_github.py
 
+test-backend:
+	cd backend && python -m pytest -v
+
+test: test-backend
+
+lint-backend:
+	cd backend && python -m ruff check .
+
+lint: lint-backend

@@ -20,6 +20,9 @@ API REST construite avec **FastAPI**, **SQLAlchemy** et **PostgreSQL**. Le backe
 | Uvicorn | 0.31.0 | Serveur ASGI |
 | httpx | 0.28.0 | Client HTTP (GitHub API) |
 | Resend | 0.8.0 | Envoi d'emails (optionnel) |
+| slowapi | 0.1.9 | Rate limiting (protection brute force) |
+| structlog | 24.4.0 | Logging structuré |
+| pytest | 8.3.4 | Tests unitaires |
 
 ---
 
@@ -331,6 +334,34 @@ pytest
 
 ---
 
+## Sécurité
+
+### Rate Limiting
+
+L'endpoint `/api/v1/auth/login` est protégé par un rate limiting de **5 requêtes par minute** par adresse IP. Les tentatives supplémentaires retournent une erreur 429.
+
+### Logging structuré
+
+Le backend utilise `structlog` pour un logging structuré au format JSON (facilite l'intégration avec des outils comme ELK, Datadog, etc.).
+
+### Health Check
+
+L'endpoint `/api/v1/health` vérifie :
+- L'état de l'API
+- La connexion à la base de données
+- La version de l'application
+
+Réponse :
+```json
+{
+  "status": "ok",
+  "version": "1.0.0",
+  "database": "healthy"
+}
+```
+
+---
+
 ## Dockerfile
 
 ```dockerfile
@@ -341,7 +372,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
 ```
 
 L'image utilise Python 3.12-slim, installe les dépendances système pour PostgreSQL (`libpq-dev`), puis les dépendances Python. Le serveur Uvicorn expose le port 8000 (mapped sur 8001 via docker-compose).
