@@ -1,7 +1,19 @@
+import type { Metadata } from "next"
 import { GraduationCap, Award, Globe, Brain, Heart } from "lucide-react"
 
 import { api } from "@/lib/api"
 import { SectionTitle } from "@/components/ui/SectionTitle"
+
+export const metadata: Metadata = {
+  title: "Parcours",
+  description:
+    "Découvrez le parcours de KAINWANG Roger : formations, certifications, expériences professionnelles et compétences en Data Engineering et Data Science.",
+  openGraph: {
+    title: "Parcours | KAINWANG Roger",
+    description:
+      "Formation, certifications et expériences de KAINWANG Roger — Data Engineer & Data Scientist.",
+  },
+}
 
 export default async function About() {
   let skills: { category: string; items: string[] }[] = []

@@ -15,6 +15,7 @@ class Settings(BaseSettings):
 
     RESEND_API_KEY: str = ""
     CONTACT_EMAIL_TO: str = ""
+    GITHUB_TOKEN: str = ""
 
     class Config:
         env_file = ".env"

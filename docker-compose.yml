@@ -7,6 +7,8 @@ services:
       - "8001:8000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/porfolio
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY:-change-me-with-openssl-rand-hex-32}
     depends_on:
       db:
         condition: service_healthy

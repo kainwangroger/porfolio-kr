@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Environnements virtuels
+venv/
+.venv/
+env/
+
+# Base de données locale
+*.db
+*.sqlite
+
+# Tests et cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# Alembic (on ne copie pas les migrations dans l'image)
+# alembic/versions/
+
+# Scripts locaux
+seed.py
+import_github.py
+
+# Env
+.env

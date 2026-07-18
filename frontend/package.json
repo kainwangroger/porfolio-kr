@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3003",
+    "dev": "next dev --webpack --port 3003",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -13,6 +13,7 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.12.1",
     "lucide-react": "0.468.0",
+    "marked": "^18.0.6",
     "next": "16.2.6",
     "next-themes": "^0.4.6",
     "react": "19.2.4",

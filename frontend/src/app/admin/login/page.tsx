@@ -17,8 +17,14 @@ export default function AdminLogin() {
     setLoading(true)
     try {
       const res = await adminApi.login(username, password)
+      // Stockage localStorage pour la compatibilité avec l'admin-api client
       localStorage.setItem("admin_token", res.access_token)
-      router.replace("/admin")
+      // Stockage cookie pour le middleware Next.js (protection côté serveur)
+      const maxAge = 60 * 60 * 24 // 24h
+      document.cookie = `admin_token=${res.access_token}; path=/; max-age=${maxAge}; SameSite=Strict`
+      const params = new URLSearchParams(window.location.search)
+      const next = params.get("next") || "/admin"
+      router.replace(next)
     } catch (err: any) {
       setError(err.message || "Erreur de connexion")
     } finally {

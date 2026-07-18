@@ -22,7 +22,40 @@ export const metadata: Metadata = {
     default: "KAINWANG Roger | Data Engineer & Data Scientist",
     template: "%s | KAINWANG Roger",
   },
-  description: "Portfolio de KAINWANG Roger, data engineer / data scientist — projets et compétences",
+  description:
+    "Portfolio de KAINWANG Roger, Data Engineer & Data Scientist spécialisé en pipelines de données, ML et cloud (AWS, GCP, Azure). Projets, compétences et contact.",
+  keywords: [
+    "Data Engineer",
+    "Data Scientist",
+    "Python",
+    "FastAPI",
+    "Next.js",
+    "Apache Spark",
+    "PostgreSQL",
+    "Machine Learning",
+    "KAINWANG Roger",
+    "Portfolio",
+  ],
+  authors: [{ name: "KAINWANG Roger" }],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    siteName: "KAINWANG Roger — Portfolio",
+    title: "KAINWANG Roger | Data Engineer & Data Scientist",
+    description:
+      "Portfolio de KAINWANG Roger, Data Engineer & Data Scientist spécialisé en pipelines de données, ML et cloud.",
+  },
+  twitter: {
+    card: "summary",
+    title: "KAINWANG Roger | Data Engineer & Data Scientist",
+    description:
+      "Portfolio de KAINWANG Roger, Data Engineer & Data Scientist spécialisé en pipelines de données, ML et cloud.",
+  },
 }
 
 export default function RootLayout({

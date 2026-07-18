@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
+from app.core.rate_limit import limiter
 from app.models.contact import ContactMessage
 from app.schemas.contact import ContactCreate, ContactResponse
 
@@ -10,7 +11,8 @@ router = APIRouter(prefix="/contact", tags=["contact"])
 
 
 @router.post("", response_model=ContactResponse)
-def send_message(data: ContactCreate, db: Session = Depends(get_db)):
+@limiter.limit("3/10minute")
+def send_message(request: Request, data: ContactCreate, db: Session = Depends(get_db)):
     msg = ContactMessage(**data.model_dump())
     db.add(msg)
     db.commit()

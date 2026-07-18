@@ -16,7 +16,7 @@ def list_projects(skip: int = 0, limit: int = 50, db: Session = Depends(get_db))
 
 @router.get("/featured", response_model=list[ProjectResponse])
 def featured_projects(db: Session = Depends(get_db)):
-    return db.query(Project).filter(Project.featured == 1).limit(4).all()
+    return db.query(Project).filter(Project.featured == 1).limit(6).all()
 
 
 @router.get("/{slug}", response_model=ProjectResponse)

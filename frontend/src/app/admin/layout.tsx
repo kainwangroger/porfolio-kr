@@ -60,6 +60,8 @@ export default function AdminLayout({
           <button
             onClick={() => {
               localStorage.removeItem("admin_token")
+              // Supprime aussi le cookie utilisé par le middleware
+              document.cookie = "admin_token=; path=/; max-age=0; SameSite=Strict"
               router.replace("/admin/login")
             }}
             className="mt-4 rounded-lg px-4 py-2 text-left text-sm text-red-500 hover:bg-muted"
