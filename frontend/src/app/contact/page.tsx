@@ -55,19 +55,19 @@ export default function ContactPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:py-20">
-      <SectionTitle
-        title="Contact"
-        subtitle="Parlons de votre prochain projet data"
-        className="mb-12"
-      />
-
       <div className="grid gap-12 lg:grid-cols-2">
         {/* Formulaire */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
+          className="space-y-8"
         >
+          <SectionTitle
+            title="Contact"
+            subtitle="Parlons de votre prochain projet data"
+          />
+
           {status === "success" ? (
             <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-10 text-center">
               <CheckCircle className="h-12 w-12 text-green-500" />
@@ -165,15 +165,12 @@ export default function ContactPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="space-y-6"
+          className="space-y-8"
         >
-          <div>
-            <h3 className="mb-2 text-lg font-semibold">Autres moyens de me contacter</h3>
-            <p className="text-sm text-muted-foreground">
-              N&apos;hésitez pas à me contacter directement via l&apos;un de ces canaux.
-              Je réponds généralement sous 24h.
-            </p>
-          </div>
+          <SectionTitle
+            title="Autres moyens de me contacter"
+            subtitle="N'hésitez pas à me contacter directement via l'un de ces canaux. Je réponds généralement sous 24h."
+          />
 
           <div className="space-y-4">
             {links.map(({ icon: Icon, label, value, href }) => (
