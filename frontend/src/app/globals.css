@@ -45,6 +45,19 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Échelle globale de l'interface.
+ *
+ * Tailwind exprime tailles de texte, espacements et largeurs de conteneur en
+ * rem : régler la racine agit donc comme un zoom, en préservant toutes les
+ * proportions. 93,75 % ramène la base de 16 à 15 px.
+ *
+ * Un pourcentage plutôt qu'une valeur en px, pour rester relatif à la taille
+ * de police choisie par le visiteur dans son navigateur — un réglage
+ * qu'imposer en px casserait. */
+html {
+  font-size: 93.75%;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
