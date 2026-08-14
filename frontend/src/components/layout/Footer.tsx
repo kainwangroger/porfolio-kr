@@ -38,7 +38,7 @@ export function Footer() {
             <Github size={20} className="text-muted-foreground transition-colors hover:text-foreground" />
           </a>
           <a
-            href="https://linkedin.com/in/kainwangroger"
+            href="https://www.linkedin.com/in/kainwangroger"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="LinkedIn"

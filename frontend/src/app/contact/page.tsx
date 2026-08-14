@@ -42,7 +42,7 @@ export default function ContactPage() {
       icon: Linkedin,
       label: "LinkedIn",
       value: "linkedin.com/in/kainwangroger",
-      href: "https://linkedin.com/in/kainwangroger",
+      href: "https://www.linkedin.com/in/kainwangroger",
     },
     {
       icon: Github,
