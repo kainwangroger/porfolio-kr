@@ -1,11 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Mail, User, Clock, MessageSquare } from "lucide-react"
+import { Mail, User, Clock } from "lucide-react"
 import { adminApi } from "@/lib/admin-api"
+import type { ContactMessage } from "@/lib/admin-api"
 
 export default function AdminMessages() {
-  const [messages, setMessages] = useState<any[]>([])
+  const [messages, setMessages] = useState<ContactMessage[]>([])
 
   useEffect(() => {
     adminApi.messages.list().then(setMessages).catch(() => {})

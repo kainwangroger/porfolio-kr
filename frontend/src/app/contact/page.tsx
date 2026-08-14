@@ -6,6 +6,7 @@ import { Send, Mail, Linkedin, Github, CheckCircle } from "lucide-react"
 
 import { api } from "@/lib/api"
 import { SectionTitle } from "@/components/ui/SectionTitle"
+import { errorMessage } from "@/lib/utils"
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", message: "" })
@@ -26,9 +27,9 @@ export default function ContactPage() {
       await api.contact(form)
       setStatus("success")
       setForm({ name: "", email: "", message: "" })
-    } catch (err: any) {
+    } catch (err) {
       setStatus("error")
-      setErrorMsg(err.message || "Une erreur est survenue. Réessayez.")
+      setErrorMsg(errorMessage(err, "Une erreur est survenue. Réessayez."))
     }
   }
 
@@ -66,6 +67,7 @@ export default function ContactPage() {
           <SectionTitle
             title="Contact"
             subtitle="Parlons de votre prochain projet data"
+            as="h1"
           />
 
           {status === "success" ? (
@@ -168,9 +170,18 @@ export default function ContactPage() {
           className="space-y-8"
         >
           <SectionTitle
+            as="h2"
             title="Autres moyens de me contacter"
             subtitle="N'hésitez pas à me contacter directement via l'un de ces canaux. Je réponds généralement sous 24h."
           />
+
+          <div className="rounded-lg border border-border bg-card p-5">
+            <h4 className="mb-2 text-sm font-semibold">Disponibilité</h4>
+            <p className="text-sm text-muted-foreground">
+              Ouvert aux opportunités freelance et CDI en Data Engineering,
+              Data Science et MLOps.
+            </p>
+          </div>
 
           <div className="space-y-4">
             {links.map(({ icon: Icon, label, value, href }) => (
@@ -190,14 +201,6 @@ export default function ContactPage() {
                 </div>
               </a>
             ))}
-          </div>
-
-          <div className="rounded-lg border border-border bg-card p-5">
-            <h4 className="mb-2 text-sm font-semibold">Disponibilité</h4>
-            <p className="text-sm text-muted-foreground">
-              Ouvert aux opportunités freelance et CDI en Data Engineering,
-              Data Science et MLOps.
-            </p>
           </div>
         </motion.div>
       </div>

@@ -7,11 +7,17 @@ import { usePathname } from "next/navigation"
 import { ThemeToggle } from "@/components/ui/ThemeToggle"
 import { cn } from "@/lib/utils"
 
+/**
+ * L'accueil était étiqueté « À propos » — un libellé qui décrivait une page
+ * inexistante et privait le site d'une entrée « Accueil ». Le blog est retiré
+ * du menu tant qu'aucun article n'est publié : mettre en avant une section
+ * vide souligne l'absence au lieu de la couvrir. La page reste accessible par
+ * son URL, il suffit de remettre la ligne le jour venu.
+ */
 const navLinks = [
-  { href: "/", label: "À propos" },
+  { href: "/", label: "Accueil" },
   { href: "/about", label: "Parcours" },
   { href: "/projects", label: "Projets" },
-  { href: "/blog", label: "Blog" },
   { href: "/contact", label: "Contact" },
 ]
 
@@ -21,8 +27,18 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-        <Link href="/" className="text-xl font-bold tracking-tight">
-          KAINWANG Roger
+        <Link href="/" className="group flex items-center gap-3 transition-opacity hover:opacity-95">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-cyan-500 text-white font-extrabold text-xs shadow-sm transition-transform group-hover:scale-105">
+            KR
+          </div>
+          <div className="flex flex-col">
+            <span className="text-base font-extrabold tracking-tight text-foreground transition-colors group-hover:text-primary leading-tight">
+              KAINWANG Roger
+            </span>
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest leading-none">
+              Portfolio Data &amp; IA
+            </span>
+          </div>
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">

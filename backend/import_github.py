@@ -14,6 +14,7 @@ import httpx
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.core.config import settings
+from app.core.demo_url import is_public_demo_url
 from app.models.project import Project
 
 # Mapping de langues GitHub → noms plus lisibles
@@ -144,29 +145,13 @@ def import_github_projects(username: str):
             tech_stack = build_tech_stack(language, topics)
             content = build_content(description, language, topics, github_url)
 
-            # Auto-détection des applications ML / Data Science / Streamlit
-            # Si le projet a un topic ML ou Streamlit, ou s'il s'agit d'un projet connu (comme Application_rul_prdiction_avec-streamlit)
-            ml_keywords = [
-                "machine-learning", "deep-learning", "streamlit", "gradio", 
-                "data-science", "nlp", "computer-vision", "detection", 
-                "classification", "yolo", "mnist", "bert", "rag", "chatbot", 
-                "cnn", "ocr", "llm", "agents", "finetuning", "prediction", "qdrant", "clip"
-            ]
-            
-            is_ml_app = any(t in ml_keywords for t in [topic.lower() for topic in topics])
-            is_specific_app = any(kw in repo_name.lower() for kw in ml_keywords)
-            
-            # Attribuer une URL de démo locale ou de template si non définie sur GitHub
-            if not homepage and (is_ml_app or is_specific_app):
-                if "streamlit" in repo_name.lower() or "prediction" in repo_name.lower() or "chatbot" in repo_name.lower() or "rag" in repo_name.lower():
-                    # Streamlit/Interface web utilise souvent le port 8501 par défaut
-                    homepage = "http://localhost:8501"
-                elif "qdrant" in repo_name.lower() or "clip" in repo_name.lower() or "yolo" in repo_name.lower() or "tracking" in repo_name.lower():
-                    # FastAPI search app/YOLO Stream
-                    homepage = "http://localhost:8000"
-                else:
-                    # Lien générique de démo sur Hugging Face Spaces (très commun pour les projets ML)
-                    homepage = f"https://huggingface.co/spaces/{username}/{repo_name}"
+            # Le lien de démo provient uniquement du champ `homepage` de GitHub.
+            # Il a existé ici une heuristique qui devinait une URL (port local,
+            # Hugging Face Spaces construit à partir du nom du dépôt) : elle
+            # produisait des boutons « Tester » pointant vers la machine du
+            # visiteur ou vers des pages inexistantes. On ne devine plus.
+            if not is_public_demo_url(homepage):
+                homepage = ""
 
             # 3. Upsert en base de données
             project = db.query(Project).filter(
@@ -187,10 +172,14 @@ def import_github_projects(username: str):
                 project.tech_stack = tech_stack
                 project.github_url = github_url
                 
-                # N'écrase le demo_url que si la nouvelle valeur est non vide
+                # GitHub fait autorité : on pose l'URL quand elle existe, et on
+                # purge celle en base si elle n'est plus (ou n'a jamais été)
+                # atteignable depuis un navigateur.
                 if homepage:
                     project.demo_url = homepage
-                
+                elif not is_public_demo_url(project.demo_url):
+                    project.demo_url = ""
+
                 project.year = year
                 updated_count += 1
                 print(f"  🔄 Updated : {repo_name} (featured={project.featured})")
@@ -212,7 +201,7 @@ def import_github_projects(username: str):
 
         db.commit()
         print(f"\n{'='*50}")
-        print(f"✅ Import terminé avec succès !")
+        print("✅ Import terminé avec succès !")
         print(f"   ➕ Créés    : {imported_count} projets")
         print(f"   🔄 Mis à jour : {updated_count} projets")
         print(f"   ⏭️  Forks ignorés : {skipped_forks}")

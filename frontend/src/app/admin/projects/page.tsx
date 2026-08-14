@@ -1,27 +1,32 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { adminApi } from "@/lib/admin-api"
+import { errorMessage } from "@/lib/utils"
+import type { Project } from "@/lib/api"
 
 export default function AdminProjects() {
-  const [projects, setProjects] = useState<any[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
 
-  const load = () => {
-    setLoading(true)
+  // `loading` démarre à true et n'est remis à true nulle part : appeler
+  // setState de façon synchrone dans un effet provoque un rendu en cascade.
+  const load = useCallback(() => {
     adminApi.projects.list().then(setProjects).catch(() => {}).finally(() => setLoading(false))
-  }
+  }, [])
 
-  useEffect(load, [])
+  useEffect(() => {
+    load()
+  }, [load])
 
   const handleDelete = async (slug: string) => {
     if (!confirm("Supprimer ce projet ?")) return
     try {
       await adminApi.projects.delete(slug)
       load()
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(errorMessage(err, "Suppression impossible."))
     }
   }
 

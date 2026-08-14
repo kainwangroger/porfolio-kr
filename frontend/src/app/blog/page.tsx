@@ -4,6 +4,13 @@ import Link from "next/link"
 import { SectionTitle } from "@/components/ui/SectionTitle"
 import { api, BlogPost } from "@/lib/api"
 
+/**
+ * Régénération toutes les heures. Le contenu bouge rarement ; sans cela chaque
+ * visite frappait l'API, y compris pendant le réveil d'un backend en veille.
+ */
+export const revalidate = 3600
+
+
 export const metadata: Metadata = {
   title: "Blog",
   description:
@@ -24,12 +31,9 @@ function formatDate(dateStr: string) {
 }
 
 export default async function BlogPage() {
-  let posts: BlogPost[] = []
-  try {
-    posts = await api.blog.list()
-  } catch {
-    posts = []
-  }
+  // Une panne remonte à `error.tsx` : « aucun article » ne doit décrire qu'un
+  // blog réellement vide.
+  const posts: BlogPost[] = await api.blog.list()
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:py-20">
@@ -37,6 +41,7 @@ export default async function BlogPage() {
         title="Blog"
         subtitle="Réflexions sur la data, le ML et le cloud"
         className="mb-12"
+        as="h1"
       />
 
       {posts.length === 0 ? (

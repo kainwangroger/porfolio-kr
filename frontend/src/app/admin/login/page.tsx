@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { adminApi } from "@/lib/admin-api"
+import { errorMessage } from "@/lib/utils"
 
 export default function AdminLogin() {
   const [username, setUsername] = useState("")
@@ -25,8 +26,8 @@ export default function AdminLogin() {
       const params = new URLSearchParams(window.location.search)
       const next = params.get("next") || "/admin"
       router.replace(next)
-    } catch (err: any) {
-      setError(err.message || "Erreur de connexion")
+    } catch (err) {
+      setError(errorMessage(err, "Erreur de connexion"))
     } finally {
       setLoading(false)
     }

@@ -2,13 +2,19 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 /**
- * Middleware Next.js — Protection des routes /admin/*
+ * Proxy Next.js — redirection des routes /admin/* vers la page de connexion.
  *
- * Vérifie la présence du token JWT dans les cookies ou l'en-tête Authorization.
- * Si absent, redirige vers /admin/login.
- * Ce contrôle s'effectue côté serveur Edge — impossible à contourner via JavaScript.
+ * Ce contrôle ne vérifie que la *présence* d'un jeton, jamais sa signature :
+ * poser un cookie `admin_token` bidon suffit à le franchir. Il s'agit d'un
+ * confort de navigation, pas d'une protection — la sécurité réelle est
+ * appliquée par l'API, qui valide le JWT sur chaque route authentifiée.
+ *
+ * Un commentaire affirmait ici l'inverse. Pour que ce soit une vraie barrière,
+ * il faudrait vérifier la signature (`jose` fonctionne en runtime Edge) et
+ * poser le cookie en HttpOnly ; c'est suivi comme constat SEC-03 dans l'audit
+ * backend.
  */
-export function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Ne protège que les routes /admin (sauf la page de login elle-même)

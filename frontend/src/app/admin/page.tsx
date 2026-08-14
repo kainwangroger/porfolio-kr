@@ -18,11 +18,13 @@ export default function AdminDashboard() {
     })
   }, [])
 
+  // `href: null` = indicateur de lecture seule. Ces cartes avaient un style de
+  // survol qui les faisait passer pour cliquables sans mener nulle part.
   const cards = [
     { label: "Projets", value: stats.projects, href: "/admin/projects", icon: FolderKanban },
     { label: "Compétences", value: stats.skills, href: "/admin/skills", icon: Code2 },
-    { label: "Visites", value: stats.page_visits, href: "#", icon: Eye },
-    { label: "CV téléchargés", value: stats.cv_downloads, href: "#", icon: Download },
+    { label: "Visites", value: stats.page_visits, href: null, icon: Eye },
+    { label: "CV téléchargés", value: stats.cv_downloads, href: null, icon: Download },
     { label: "Messages non lus", value: stats.unread_messages, href: "/admin/messages", icon: MessageSquare },
   ]
 
@@ -33,15 +35,19 @@ export default function AdminDashboard() {
         {cards.map((card) => {
           const Icon = card.icon
           const content = (
-            <div className="rounded-lg border border-border bg-card p-6 transition-colors hover:border-primary">
+            <div
+              className={`h-full rounded-lg border border-border bg-card p-6 ${
+                card.href ? "transition-colors hover:border-primary" : ""
+              }`}
+            >
               <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold">{card.value}</div>
+                <div className="text-3xl font-bold tabular-nums">{card.value}</div>
                 <Icon className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="mt-1 text-sm text-muted-foreground">{card.label}</div>
             </div>
           )
-          if (card.href === "#") return <div key={card.label}>{content}</div>
+          if (!card.href) return <div key={card.label}>{content}</div>
           return (
             <Link key={card.label} href={card.href}>
               {content}

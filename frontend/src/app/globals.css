@@ -1,4 +1,10 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* next-themes bascule la classe `dark` sur <html>. Sans cette déclaration,
+   Tailwind v4 compile `dark:` en @media (prefers-color-scheme) et les
+   utilitaires suivent l'OS au lieu du bouton de thème. */
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: #ffffff;
@@ -49,4 +55,54 @@ body {
   * {
     border-color: var(--border);
   }
+}
+
+/* Animation d'entrée en CSS plutôt qu'en JavaScript : elle se joue au premier
+   rendu, sans attendre l'hydratation, et le texte reste lisible si le script
+   n'arrive jamais. `backwards` n'applique l'état initial que pendant le délai,
+   jamais après la fin. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-rise {
+  animation: rise 0.6s cubic-bezier(0.215, 0.61, 0.355, 1) backwards;
+}
+
+.animate-delay-200 {
+  animation-delay: 0.2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise {
+    animation: none;
+  }
+}
+
+/* Le contenu Markdown rendu par `marked` hérite de la palette du site
+   plutôt que du gris par défaut du plugin typography. */
+.prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-lead: var(--muted-foreground);
+  --tw-prose-links: var(--primary);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-counters: var(--muted-foreground);
+  --tw-prose-bullets: var(--border);
+  --tw-prose-hr: var(--border);
+  --tw-prose-quotes: var(--foreground);
+  --tw-prose-quote-borders: var(--border);
+  --tw-prose-captions: var(--muted-foreground);
+  --tw-prose-code: var(--foreground);
+  --tw-prose-pre-code: var(--foreground);
+  --tw-prose-pre-bg: var(--muted);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
 }

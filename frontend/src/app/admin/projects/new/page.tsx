@@ -3,11 +3,12 @@
 import { useRouter } from "next/navigation"
 import { adminApi } from "@/lib/admin-api"
 import ProjectForm from "../ProjectForm"
+import type { Project } from "@/lib/api"
 
 export default function NewProject() {
   const router = useRouter()
 
-  const handleSave = async (data: any) => {
+  const handleSave = async (data: Partial<Project>) => {
     await adminApi.projects.create(data)
     router.push("/admin/projects")
   }

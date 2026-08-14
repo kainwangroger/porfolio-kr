@@ -4,18 +4,19 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { adminApi } from "@/lib/admin-api"
 import ProjectForm from "../ProjectForm"
+import type { Project } from "@/lib/api"
 
 export default function EditProject() {
   const { slug } = useParams()
   const router = useRouter()
-  const [project, setProject] = useState<any>(null)
+  const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     adminApi.projects.get(slug as string).then(setProject).catch(() => router.push("/admin/projects")).finally(() => setLoading(false))
   }, [slug, router])
 
-  const handleSave = async (data: any) => {
+  const handleSave = async (data: Partial<Project>) => {
     await adminApi.projects.update(slug as string, data)
     router.push("/admin/projects")
   }

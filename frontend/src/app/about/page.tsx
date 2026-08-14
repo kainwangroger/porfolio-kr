@@ -1,13 +1,20 @@
 import type { Metadata } from "next"
-import { GraduationCap, Award, Globe, Brain, Heart } from "lucide-react"
+import { GraduationCap, Award, Globe, Heart, Briefcase, Trophy } from "lucide-react"
 
 import { api } from "@/lib/api"
 import { SectionTitle } from "@/components/ui/SectionTitle"
 
+/**
+ * Régénération toutes les heures. Le contenu bouge rarement ; sans cela chaque
+ * visite frappait l'API, y compris pendant le réveil d'un backend en veille.
+ */
+export const revalidate = 3600
+
+
 export const metadata: Metadata = {
   title: "Parcours",
   description:
-    "Découvrez le parcours de KAINWANG Roger : formations, certifications, expériences professionnelles et compétences en Data Engineering et Data Science.",
+    "Découvrez le parcours de KAINWANG Roger : formations, certifications, expériences professionnelles chez Togo AI Lab & Oxfam, et compétences en Data Engineering et Data Science.",
   openGraph: {
     title: "Parcours | KAINWANG Roger",
     description:
@@ -16,88 +23,112 @@ export const metadata: Metadata = {
 }
 
 export default async function About() {
-  let skills: { category: string; items: string[] }[] = []
+  // Le parcours ne dépend pas de l'API : si les compétences ne remontent pas,
+  // la section s'efface au lieu de faire tomber toute la page.
+  const skillsResult = await api.skills.list().catch(() => null)
 
-  try {
-    const all = await api.skills.list()
-    const grouped: Record<string, string[]> = {}
-    for (const s of all) {
-      if (!grouped[s.category]) grouped[s.category] = []
-      grouped[s.category].push(s.name)
-    }
-    skills = Object.entries(grouped).map(([category, items]) => ({ category, items }))
-  } catch {
-    skills = []
+  const grouped: Record<string, string[]> = {}
+  for (const s of skillsResult ?? []) {
+    if (!grouped[s.category]) grouped[s.category] = []
+    grouped[s.category].push(s.name)
   }
+  const skills = Object.entries(grouped).map(([category, items]) => ({ category, items }))
 
   const experience = [
-    { role: "Data Engineer", company: "Entreprise", period: "2024 - Présent", description: "Conception et maintenance de pipelines de données." },
-    { role: "Data Scientist", company: "Entreprise", period: "2023 - 2024", description: "Modélisation et analyse de données." },
-    { role: "Stagiaire IT", company: "Oxfam Intermon", period: "2022 - 2023", description: "Support technique et analyse de données." },
+    {
+      role: "Stagiaire Data Engineer",
+      company: "Togo AI Lab",
+      period: "Février 2026 – Juillet 2026",
+      bullets: [
+        "Conception et maintenance de pipelines de données Big Data (Apache Spark, PySpark, Kafka, Airflow).",
+        "Développement de solutions data-driven pour des projets gouvernementaux à fort impact sociétal.",
+        "Collaboration avec des partenaires internationaux.",
+        "Intégration et traitement de données massives à des fins d'aide à la décision publique.",
+      ],
+    },
+    {
+      role: "Stagiaire IT",
+      company: "Oxfam Intermon",
+      period: "Septembre 2022 – Mars 2023",
+      bullets: [
+        "Support technique et maintenance des systèmes d'information.",
+        "Analyse et traitement de données pour le suivi des programmes humanitaires.",
+      ],
+    },
+  ]
+
+  const majorProjects = [
+    {
+      title: "Harvard HSIL Global Health Systems Hackathon",
+      subtitle: "Accra, Ghana · Avril 2026 (Team Togo AI Lab)",
+      description:
+        "Détection précoce de l'anémie par intelligence artificielle via un simple scan de la paume de la main avec un smartphone. Solution visant à réduire les coûts de diagnostic et améliorer l'accès aux soins dans les zones sous-médicalisées.",
+    },
+    {
+      title: "Portfolio Personnel — Application Web Full Stack",
+      subtitle: "2026",
+      description:
+        "Développement d'un portfolio web moderne avec Next.js 16 (frontend), API FastAPI (backend), backoffice d'administration et déploiement conteneurisé avec Docker.",
+    },
   ]
 
   const education = [
-    { degree: "Master 2 en Intelligence Artificielle et Big Data", school: "ESGIS", period: "2024 - 2025" },
-    { degree: "Master 1 en Intelligence Artificielle et Big Data", school: "ESGIS", period: "2023 - 2024" },
-    { degree: "Licence en Informatique", school: "Université de N'Gaoundéré", period: "2017 - 2020" },
+    { degree: "Master 2 en Intelligence Artificielle et Big Data", school: "ESGIS, Lomé", period: "2024 – 2025" },
+    { degree: "Master 1 en Intelligence Artificielle et Big Data", school: "ESGIS, Lomé", period: "2023 – 2024" },
+    { degree: "Licence en Informatique", school: "Université de N'Gaoundéré, Cameroun", period: "2017 – 2020" },
+    { degree: "Baccalauréat série E", school: "Lycée d'Enseignement Technique Industriel de N'Djamena", period: "2016 – 2017" },
   ]
 
   const certifications = [
-    "AWS Cloud Practitioner",
-    "Data Engineer, Big Data and ML on Google Cloud",
-    "Agile Project Management and Scrum - OpenClassrooms",
+    "AWS Cloud Practitioner — Amazon Web Services",
+    "Data Engineer, Big Data and ML on Google Cloud — Google Cloud",
+    "Agile Project Management and Scrum — OpenClassrooms",
   ]
 
   const languages = [
-    { name: "Français", level: "C1 - Excellente maîtrise" },
-    { name: "Anglais", level: "A2 - Compréhension écrite et communication de base" },
-    { name: "Arabe", level: "A1 - Notions élémentaires" },
+    { name: "Français", level: "C1 — Courant / Excellente maîtrise" },
+    { name: "Anglais", level: "A2 — Élémentaire / Communication de base" },
+    { name: "Arabe", level: "A1 — Notions" },
   ]
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:py-20">
       <SectionTitle
-        title="Parcours"
-        subtitle="Qui je suis et ce que je fais"
+        title="Parcours & Expérience"
+        subtitle="Découvrez mon historique professionnel, mes formations et mes réalisations"
         className="mb-12"
       />
 
+      {/* Profil & Compétences */}
       <div className="mb-16 grid gap-8 lg:grid-cols-2">
         <div>
-          <h3 className="mb-4 text-xl font-semibold">Bio</h3>
+          <h2 className="mb-4 text-xl font-semibold text-foreground">Profil Professionnel</h2>
           <p className="mb-4 text-muted-foreground leading-relaxed">
-            Data engineer &amp; data scientist passionné par la donnée, je conçois des
-            pipelines de données robustes et scalables avec des technologies comme
-            Apache Spark, Airflow, Kafka et Docker. J&apos;aime transformer des
-            datasets bruts en insights actionnables via la visualisation (Power BI,
-            Tableau, Looker) et le machine learning.
+            Data Engineer titulaire d&apos;un Master 2 en Intelligence Artificielle et Big Data (ESGIS), spécialisé dans la
+            conception de pipelines de données robustes et scalables, l&apos;analyse de données et le Machine Learning.
           </p>
           <p className="mb-4 text-muted-foreground leading-relaxed">
-            Titulaire d&apos;un Master 2 en Intelligence Artificielle et Big Data à
-            l&apos;ESGIS, je maîtrise Python, SQL, les frameworks Django/Flask/Spring Boot
-            et les environnements cloud (AWS, Azure, GCP).
-          </p>
-          <p className="text-muted-foreground leading-relaxed">
-            Toujours à l&apos;affût des nouvelles technologies data, je cherche à
-            constamment améliorer mes compétences et à livrer des solutions à forte
-            valeur ajoutée.
+            Passionné par la transformation de données brutes en insights actionnables pour accompagner la prise de décision.
+            Passé par <strong className="text-foreground">Togo AI Lab</strong>, où j&apos;ai conçu et orchestré des pipelines de données pour des projets d&apos;envergure nationale et internationale.
           </p>
         </div>
 
         <div>
-          <h3 className="mb-4 text-xl font-semibold">Compétences</h3>
+          <h2 className="mb-4 text-xl font-semibold text-foreground">Compétences clés</h2>
           {skills.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Ajoute des compétences via l'API.</p>
+            <p className="text-sm text-muted-foreground">
+              La liste des compétences est momentanément indisponible.
+            </p>
           ) : (
             <div className="space-y-4">
               {skills.map((group) => (
                 <div key={group.category}>
-                  <h4 className="mb-2 text-sm font-medium text-primary">{group.category}</h4>
+                  <h3 className="mb-2 text-sm font-medium text-primary">{group.category}</h3>
                   <div className="flex flex-wrap gap-2">
                     {group.items.map((skill) => (
                       <span
                         key={skill}
-                        className="rounded-md border border-border bg-card px-3 py-1 text-sm"
+                        className="rounded-md border border-border bg-card px-3 py-1 text-sm shadow-sm"
                       >
                         {skill}
                       </span>
@@ -110,68 +141,115 @@ export default async function About() {
         </div>
       </div>
 
-      <h3 className="mb-6 flex items-center gap-2 text-xl font-semibold">
+      {/* Expérience Professionnelle */}
+      <h2 className="mb-6 flex items-center gap-2 text-xl font-semibold text-foreground">
+        <Briefcase className="h-5 w-5 text-primary" />
+        Expériences Professionnelles
+      </h2>
+      <div className="mb-16 space-y-8">
+        {experience.map((exp) => (
+          <div key={exp.company + exp.role} className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3">
+              <div>
+                <h3 className="text-lg font-bold text-foreground">{exp.role}</h3>
+                <p className="text-sm font-semibold text-primary">{exp.company}</p>
+              </div>
+              <span className="mt-1 sm:mt-0 text-xs font-medium text-muted-foreground rounded-full bg-muted px-3 py-1 self-start sm:self-auto">
+                {exp.period}
+              </span>
+            </div>
+            <ul className="space-y-1.5 list-disc list-inside text-sm text-muted-foreground">
+              {exp.bullets.map((bullet, idx) => (
+                <li key={idx} className="leading-relaxed">
+                  {bullet}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      {/* Projets Marquants du CV */}
+      <h2 className="mb-6 flex items-center gap-2 text-xl font-semibold text-foreground">
+        <Trophy className="h-5 w-5 text-primary" />
+        Projets Marquants &amp; Hackathons
+      </h2>
+      <div className="mb-16 grid gap-6 md:grid-cols-2">
+        {majorProjects.map((p) => (
+          <div key={p.title} className="rounded-xl border border-border bg-card p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <h3 className="font-bold text-foreground mb-1">{p.title}</h3>
+              <p className="text-xs text-primary font-medium mb-3">{p.subtitle}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{p.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Formation */}
+      <h2 className="mb-6 flex items-center gap-2 text-xl font-semibold text-foreground">
         <GraduationCap className="h-5 w-5 text-primary" />
         Formation
-      </h3>
-      <div className="mb-16 space-y-6">
+      </h2>
+      <div className="mb-16 space-y-4">
         {education.map((edu) => (
-          <div key={edu.degree} className="border-l-2 border-primary pl-4">
-            <h4 className="font-semibold">{edu.degree}</h4>
-            <p className="text-sm text-primary">{edu.school} · {edu.period}</p>
+          <div key={edu.degree + edu.school} className="rounded-lg border border-border bg-card p-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <h3 className="font-semibold text-foreground">{edu.degree}</h3>
+              <p className="text-sm text-primary">{edu.school}</p>
+            </div>
+            <span className="text-xs font-medium text-muted-foreground">{edu.period}</span>
           </div>
         ))}
       </div>
 
-      <h3 className="mb-6 flex items-center gap-2 text-xl font-semibold">
+      {/* Certifications */}
+      <h2 className="mb-6 flex items-center gap-2 text-xl font-semibold text-foreground">
         <Award className="h-5 w-5 text-primary" />
         Certifications
-      </h3>
+      </h2>
       <div className="mb-16 flex flex-wrap gap-3">
         {certifications.map((cert) => (
-          <span
+          <div
             key={cert}
-            className="rounded-full border border-border bg-card px-4 py-2 text-sm"
+            className="rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm flex items-center gap-2"
           >
+            <span className="h-2 w-2 rounded-full bg-primary" />
             {cert}
-          </span>
-        ))}
-      </div>
-
-      <h3 className="mb-6 flex items-center gap-2 text-xl font-semibold">
-        <Brain className="h-5 w-5 text-primary" />
-        Expérience
-      </h3>
-      <div className="mb-16 space-y-6">
-        {experience.map((exp) => (
-          <div key={exp.role} className="border-l-2 border-primary pl-4">
-            <h4 className="font-semibold">{exp.role}</h4>
-            <p className="text-sm text-primary">{exp.company} · {exp.period}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{exp.description}</p>
           </div>
         ))}
       </div>
 
-      <h3 className="mb-6 flex items-center gap-2 text-xl font-semibold">
-        <Globe className="h-5 w-5 text-primary" />
-        Langues
-      </h3>
-      <div className="mb-16 grid gap-4 sm:grid-cols-3">
-        {languages.map((lang) => (
-          <div key={lang.name} className="rounded-lg border border-border bg-card p-4">
-            <div className="text-sm font-semibold">{lang.name}</div>
-            <div className="mt-1 text-xs text-muted-foreground">{lang.level}</div>
+      {/* Langues & Centres d'intérêt */}
+      <div className="grid gap-8 md:grid-cols-2">
+        <div>
+          <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-foreground">
+            <Globe className="h-5 w-5 text-primary" />
+            Langues
+          </h2>
+          <div className="space-y-3">
+            {languages.map((lang) => (
+              <div key={lang.name} className="rounded-lg border border-border bg-card p-3 shadow-sm">
+                <span className="font-bold text-foreground text-sm">{lang.name}</span>
+                <span className="ml-2 text-xs text-muted-foreground">— {lang.level}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
 
-      <h3 className="mb-6 flex items-center gap-2 text-xl font-semibold">
-        <Heart className="h-5 w-5 text-primary" />
-        Centres d&apos;intérêt
-      </h3>
-      <p className="text-sm text-muted-foreground">
-        Basketball, football, musique gospel, voyages (Tchad, Cameroun, Nigeria, Bénin, Togo).
-      </p>
+        <div>
+          <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-foreground">
+            <Heart className="h-5 w-5 text-primary" />
+            Centres d&apos;intérêt
+          </h2>
+          <div className="rounded-lg border border-border bg-card p-5 shadow-sm space-y-2 text-sm text-muted-foreground">
+            <p><strong className="text-foreground">Sports :</strong> Basketball, Football</p>
+            <p><strong className="text-foreground">Musique :</strong> Gospel</p>
+            <p><strong className="text-foreground">Voyages :</strong> Tchad, Cameroun, Nigeria, Bénin, Togo, Ghana</p>
+            <p><strong className="text-foreground">Permis :</strong> Catégorie B</p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

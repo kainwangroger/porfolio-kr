@@ -7,7 +7,7 @@ Application web construite avec **Next.js 16** (App Router), **React 19**, **Typ
 ## Stack technique
 
 | Technologie | Version | Rôle |
-|-------------|---------|------|
+| ------------- | --------- | ------ |
 | Next.js | 16.2.6 | Framework React (SSR/SSG, App Router) |
 | React | 19.2.4 | Bibliothèque UI |
 | TypeScript | 5.x | Typage statique |
@@ -128,16 +128,22 @@ frontend/
 ## Pages publiques
 
 | Route | Description |
-|-------|-------------|
+| ------- | ------------- |
 | `/` | Page d'accueil : Hero avec nom/titre, projets à la une, tech stack |
 | `/about` | Parcours : bio, formations, certifications, compétences, langues, centres d'intérêt |
-| `/projects` | Liste de tous les projets avec filtres |
+| `/projects` | Liste des projets, filtrable par domaine (Data Engineering / ML & IA / Web) |
 | `/projects/[slug]` | Détail d'un projet (description, tech stack, lien GitHub/demo) |
+| `/blog` | Articles — retiré du menu tant qu'aucun article n'est publié |
+| `/api/thumb` | Vignette SVG générée d'un projet, mise en cache par le navigateur |
+| `/sitemap.xml`, `/robots.txt` | Générés à partir de la liste des projets |
+
+Le lien de démo (« Tester ») n'apparaît que si `demo_url` pointe vers une
+adresse publique — voir `lib/demo-url.ts` et `backend/clean_demo_urls.py`.
 
 ## Pages admin
 
 | Route | Description |
-|-------|-------------|
+| ------- | ------------- |
 | `/admin` | Dashboard : nombre de visites, téléchargements CV, messages non lus |
 | `/admin/login` | Connexion admin (JWT) |
 | `/admin/projects` | Liste des projets (CRUD) |
@@ -151,15 +157,18 @@ frontend/
 ## Composants principaux
 
 ### Hero (`components/home/Hero.tsx`)
+
 - Affiche le nom et le titre "Data Engineer & Data Scientist"
 - Bouton de téléchargement du CV (`public/cv_kainwang_linkedin.pdf`)
 - Enregistre chaque téléchargement via l'API (`POST /stats/cv-download`)
 
 ### TechStack (`components/home/TechStack.tsx`)
+
 - Récupère les compétences depuis l'API (`GET /skills`)
 - Affiche chaque technologie avec une icône et un effet d'animation
 
 ### PageTracker (`components/layout/PageTracker.tsx`)
+
 - Enregistre automatiquement chaque visite de page via l'API (`POST /stats/page-visit`)
 
 ---
@@ -169,10 +178,12 @@ frontend/
 Le frontend communique avec le backend via deux clients API :
 
 ### Client public (`lib/api.ts`)
+
 - Utilisé pour les pages publiques (pas d'authentification requise)
 - Endpoints : `/projects`, `/skills`, `/blog`, `/contact`, `/stats`, `/health`
 
 ### Client admin (`lib/admin-api.ts`)
+
 - Utilisé pour le backoffice admin
 - Stocke le token JWT dans `localStorage`
 - Redirige vers `/admin/login` en cas d'erreur 401
@@ -187,9 +198,11 @@ Le frontend communique avec le backend via deux clients API :
    - **Root Directory** : `frontend`
    - **Framework Preset** : Next.js
 3. Ajouter la variable d'environnement :
+
    ```
    NEXT_PUBLIC_API_URL=https://ton-backend.onrender.com/api/v1
    ```
+
 4. Déployer
 
 ---
