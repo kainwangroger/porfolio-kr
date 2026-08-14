@@ -1,4 +1,16 @@
-"""Seed script: crée l'admin et des exemples de données."""
+"""Seed script: crée l'admin et des exemples de données.
+
+Le mot de passe administrateur se lit dans l'environnement. Il a été codé en
+dur ici (« admin123 ») : publié dans le dépôt, il n'en était plus un.
+
+    ADMIN_PASSWORD=... python seed.py
+
+Variables reconnues : ADMIN_USERNAME (défaut « admin »), ADMIN_EMAIL,
+ADMIN_PASSWORD (obligatoire à la création).
+"""
+
+import os
+import sys
 
 from app.core.database import Base, SessionLocal, engine
 from app.core.security import hash_password
@@ -6,18 +18,30 @@ from app.models.user import User
 from app.models.skill import Skill
 from app.models.project import Project
 
+MIN_PASSWORD_LENGTH = 12
+
 Base.metadata.create_all(bind=engine)
 db = SessionLocal()
 
 # Créer l'admin (si pas déjà fait)
-admin = db.query(User).filter(User.username == "admin").first()
+admin_username = os.getenv("ADMIN_USERNAME", "admin")
+admin = db.query(User).filter(User.username == admin_username).first()
 if not admin:
+    password = os.getenv("ADMIN_PASSWORD", "")
+    if len(password) < MIN_PASSWORD_LENGTH:
+        print(
+            f"❌ ADMIN_PASSWORD manquant ou trop court "
+            f"({MIN_PASSWORD_LENGTH} caractères minimum).\n"
+            f"   Exemple : ADMIN_PASSWORD=\"$(openssl rand -base64 24)\" python seed.py"
+        )
+        sys.exit(1)
+
     db.add(User(
-        username="admin",
-        email="admin@example.com",
-        hashed_password=hash_password("admin123"),
+        username=admin_username,
+        email=os.getenv("ADMIN_EMAIL", "admin@example.com"),
+        hashed_password=hash_password(password),
     ))
-    print("✅ Admin créé (admin / admin123)")
+    print(f"✅ Admin créé ({admin_username})")
 
 # Compétences par défaut
 skills_data = [

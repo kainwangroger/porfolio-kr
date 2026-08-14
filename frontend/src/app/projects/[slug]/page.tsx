@@ -2,11 +2,11 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Github, ExternalLink } from "lucide-react"
-import { marked } from "marked"
 
 import { Button } from "@/components/ui/Button"
 import { api } from "@/lib/api"
 import { isPublicDemoUrl } from "@/lib/demo-url"
+import { renderMarkdown } from "@/lib/markdown"
 import { projectDomain } from "@/lib/project-domain"
 import { shouldShowOnProjectsPage } from "@/lib/projectGroups"
 import { projectImageUrl, cleanProjectTitle, THUMB_WIDTH, THUMB_HEIGHT } from "@/lib/project-image"
@@ -62,7 +62,7 @@ export default async function ProjectDetail({ params }: Props) {
     notFound()
   }
 
-  const contentHtml = await marked.parse(
+  const contentHtml = await renderMarkdown(
     project.content || "Ce projet n'a pas de contenu détaillé."
   )
   const domain = projectDomain(project)

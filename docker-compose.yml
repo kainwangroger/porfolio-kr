@@ -8,7 +8,9 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/porfolio
       - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY:-change-me-with-openssl-rand-hex-32}
+      # Pas de valeur de repli : compose échoue si la variable manque,
+      # plutôt que de démarrer avec une clé connue de tous.
+      - SECRET_KEY=${SECRET_KEY:?définissez SECRET_KEY, ex. openssl rand -hex 32}
     depends_on:
       db:
         condition: service_healthy
