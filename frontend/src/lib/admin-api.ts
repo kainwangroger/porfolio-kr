@@ -1,6 +1,6 @@
 "use client"
 
-import type { BlogPost, Project, Skill } from "./api"
+import type { BlogPost, PortfolioEvent, Project, Skill } from "./api"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api/v1"
 
@@ -83,6 +83,21 @@ export const adminApi = {
         body: JSON.stringify(data),
       }),
     delete: (slug: string) => fetcher<void>(`/blog/${slug}`, { method: "DELETE" }),
+  },
+  events: {
+    list: () => fetcher<PortfolioEvent[]>("/events"),
+    get: (slug: string) => fetcher<PortfolioEvent>(`/events/${slug}`),
+    create: (data: Writable<PortfolioEvent>) =>
+      fetcher<PortfolioEvent>("/events", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (slug: string, data: Writable<PortfolioEvent>) =>
+      fetcher<PortfolioEvent>(`/events/${slug}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    delete: (slug: string) => fetcher<void>(`/events/${slug}`, { method: "DELETE" }),
   },
   skills: {
     list: () => fetcher<Skill[]>("/skills"),

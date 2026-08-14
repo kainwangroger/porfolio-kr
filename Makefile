@@ -1,4 +1,4 @@
-.PHONY: dev-frontend dev-backend dev-docker install-frontend install-backend migrate seed import-github import-github-docker clean-demo-urls clean-demo-urls-apply test test-backend test-frontend lint lint-backend lint-frontend build-frontend
+.PHONY: dev-frontend dev-backend dev-docker install-frontend install-backend migrate seed seed-events import-github import-github-docker clean-demo-urls clean-demo-urls-apply test test-backend test-frontend lint lint-backend lint-frontend build-frontend
 
 dev-frontend:
 	cd frontend && npm run dev -- --webpack --port 3003
@@ -20,6 +20,9 @@ migrate:
 
 seed:
 	cd backend && python seed.py
+
+seed-events:
+	cd backend && python seed_events.py
 
 import-github:
 	cd backend && python import_github.py

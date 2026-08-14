@@ -13,6 +13,7 @@ from app.models.blog import BlogPost
 from app.models.contact import ContactMessage
 from app.models.skill import Skill
 from app.models.stats import Stat
+from app.models.event import Event
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

@@ -9,6 +9,7 @@ import { useIsClient } from "@/lib/use-is-client"
 const navItems = [
   { label: "Dashboard", href: "/admin" },
   { label: "Projets", href: "/admin/projects" },
+  { label: "Événements", href: "/admin/events" },
   { label: "Compétences", href: "/admin/skills" },
   { label: "Messages", href: "/admin/messages" },
 ]

@@ -26,6 +26,10 @@ export const api = {
     featured: () => fetcher<Project[]>("/projects/featured"),
     get: (slug: string) => fetcher<Project>(`/projects/${slug}`),
   },
+  events: {
+    list: () => fetcher<PortfolioEvent[]>("/events"),
+    get: (slug: string) => fetcher<PortfolioEvent>(`/events/${slug}`),
+  },
   blog: {
     list: (skip = 0, limit = 20) =>
       fetcher<BlogPost[]>(`/blog?skip=${skip}&limit=${limit}`),
@@ -61,6 +65,36 @@ export interface Project {
   year: number
   created_at: string
   updated_at: string | null
+}
+
+/**
+ * Un événement : hackathon, conférence, école d'été.
+ *
+ * `images` contient une URL par ligne — voir `eventImages()` pour la lecture.
+ * Nommé `PortfolioEvent` et non `Event`, qui est déjà pris par le type DOM.
+ */
+export interface PortfolioEvent {
+  id: number
+  title: string
+  slug: string
+  organizer: string
+  location: string
+  period: string
+  role: string
+  description: string
+  images: string
+  link_url: string
+  sort_order: number
+  created_at: string
+  updated_at: string | null
+}
+
+/** Découpe le champ `images` en URLs exploitables. */
+export function eventImages(event: { images: string }): string[] {
+  return event.images
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
 }
 
 export interface BlogPost {
