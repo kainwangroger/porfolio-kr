@@ -1,4 +1,4 @@
-.PHONY: dev-frontend dev-backend dev-docker install-frontend install-backend migrate seed seed-events import-github import-github-docker clean-demo-urls clean-demo-urls-apply test test-backend test-frontend lint lint-backend lint-frontend build-frontend
+.PHONY: dev-frontend dev-backend dev-docker install-frontend install-backend migrate seed seed-events seed-demo-events seed-demo-events-remove import-github import-github-docker clean-demo-urls clean-demo-urls-apply test test-backend test-frontend lint lint-backend lint-frontend build-frontend
 
 dev-frontend:
 	cd frontend && npm run dev -- --webpack --port 3003
@@ -23,6 +23,13 @@ seed:
 
 seed-events:
 	cd backend && python seed_events.py
+
+# Événements fictifs, pour prévisualiser la page. À retirer avant mise en ligne.
+seed-demo-events:
+	cd backend && python seed_demo_events.py
+
+seed-demo-events-remove:
+	cd backend && python seed_demo_events.py --remove
 
 import-github:
 	cd backend && python import_github.py
