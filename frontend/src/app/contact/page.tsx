@@ -1,11 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
 import { Send, Mail, Linkedin, Github, CheckCircle } from "lucide-react"
 
 import { api } from "@/lib/api"
-import { SectionTitle } from "@/components/ui/SectionTitle"
 import { errorMessage } from "@/lib/utils"
 
 export default function ContactPage() {
@@ -54,30 +52,39 @@ export default function ContactPage() {
     },
   ]
 
+
+  const fieldClass =
+    "w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none"
+
+  /**
+   * Les deux colonnes sont placées explicitement sur trois rangées — titres,
+   * sous-titres, contenus. Chaque rangée prend la hauteur du plus grand de ses
+   * deux éléments, si bien que les titres restent au même niveau et les cartes
+   * démarrent à la même hauteur, quelle que soit la longueur des textes.
+   * L'ordre du DOM reste celui de la lecture mobile, où tout s'empile.
+   */
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:py-20">
-      <div className="grid gap-12 lg:grid-cols-2">
-        {/* Formulaire */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="space-y-8"
-        >
-          <SectionTitle
-            title="Contact"
-            subtitle="Parlons de votre prochain projet data"
-            as="h1"
-          />
+      <div className="grid gap-x-12 gap-y-4 lg:grid-cols-2">
+        {/* Colonne 1 — titre */}
+        <h1 className="text-3xl font-bold tracking-tight text-balance lg:col-start-1 lg:row-start-1 lg:self-end">
+          Contact
+        </h1>
+        <p className="text-lg text-muted-foreground lg:col-start-1 lg:row-start-2">
+          Parlons de votre prochain projet data
+        </p>
 
+        {/* Colonne 1 — formulaire */}
+        <div className="mt-4 lg:col-start-1 lg:row-start-3 lg:mt-6">
           {status === "success" ? (
-            <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-10 text-center">
+            <div className="flex h-full flex-col items-center justify-center gap-4 rounded-xl border border-border bg-card p-8 text-center">
               <CheckCircle className="h-12 w-12 text-green-500" />
-              <h3 className="text-lg font-semibold">Message envoyé !</h3>
+              <h2 className="text-lg font-semibold">Message envoyé !</h2>
               <p className="text-sm text-muted-foreground">
                 Merci pour votre message. Je vous répondrai dans les plus brefs délais.
               </p>
               <button
+                type="button"
                 onClick={() => setStatus("idle")}
                 className="mt-2 text-sm text-primary hover:underline"
               >
@@ -87,13 +94,10 @@ export default function ContactPage() {
           ) : (
             <form
               onSubmit={handleSubmit}
-              className="space-y-5 rounded-xl border border-border bg-card p-8"
+              className="flex h-full flex-col gap-5 rounded-xl border border-border bg-card p-6"
             >
               <div>
-                <label
-                  htmlFor="name"
-                  className="mb-1.5 block text-sm font-medium"
-                >
+                <label htmlFor="name" className="mb-1.5 block text-sm font-semibold">
                   Nom complet
                 </label>
                 <input
@@ -104,15 +108,12 @@ export default function ContactPage() {
                   value={form.name}
                   onChange={handleChange}
                   placeholder="KAINWANG Roger"
-                  className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none"
+                  className={fieldClass}
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="email"
-                  className="mb-1.5 block text-sm font-medium"
-                >
+                <label htmlFor="email" className="mb-1.5 block text-sm font-semibold">
                   Email
                 </label>
                 <input
@@ -123,15 +124,14 @@ export default function ContactPage() {
                   value={form.email}
                   onChange={handleChange}
                   placeholder="vous@exemple.com"
-                  className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none"
+                  className={fieldClass}
                 />
               </div>
 
-              <div>
-                <label
-                  htmlFor="message"
-                  className="mb-1.5 block text-sm font-medium"
-                >
+              {/* Le champ message absorbe la hauteur restante : les deux
+                  colonnes se terminent ainsi exactement au même niveau. */}
+              <div className="flex flex-1 flex-col">
+                <label htmlFor="message" className="mb-1.5 block text-sm font-semibold">
                   Message
                 </label>
                 <textarea
@@ -142,67 +142,64 @@ export default function ContactPage() {
                   value={form.message}
                   onChange={handleChange}
                   placeholder="Décrivez votre projet ou votre demande..."
-                  className="w-full resize-none rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none"
+                  className={`${fieldClass} min-h-32 flex-1 resize-none`}
                 />
               </div>
 
               {status === "error" && (
-                <p className="text-sm text-red-500">{errorMsg}</p>
+                <p role="alert" className="text-sm text-red-500">
+                  {errorMsg}
+                </p>
               )}
 
               <button
                 type="submit"
                 disabled={status === "loading"}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 <Send className="h-4 w-4" />
                 {status === "loading" ? "Envoi en cours..." : "Envoyer le message"}
               </button>
             </form>
           )}
-        </motion.div>
+        </div>
 
-        {/* Liens de contact */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="space-y-8"
-        >
-          <SectionTitle
-            as="h2"
-            title="Autres moyens de me contacter"
-            subtitle="N'hésitez pas à me contacter directement via l'un de ces canaux. Je réponds généralement sous 24h."
-          />
+        {/* Colonne 2 — titre */}
+        <h2 className="mt-10 text-3xl font-bold tracking-tight text-balance lg:col-start-2 lg:row-start-1 lg:mt-0 lg:self-end">
+          Autres moyens de me contacter
+        </h2>
+        <p className="text-lg text-muted-foreground lg:col-start-2 lg:row-start-2">
+          Je réponds généralement sous 24h.
+        </p>
 
-          <div className="rounded-lg border border-border bg-card p-5">
-            <h4 className="mb-2 text-sm font-semibold">Disponibilité</h4>
+        {/* Colonne 2 — canaux */}
+        <div className="mt-4 flex flex-col gap-4 lg:col-start-2 lg:row-start-3 lg:mt-6">
+          <div className="rounded-xl border border-border bg-card p-6">
+            <h3 className="mb-1.5 text-sm font-semibold">Disponibilité</h3>
             <p className="text-sm text-muted-foreground">
-              Ouvert aux opportunités freelance et CDI en Data Engineering,
-              Data Science et MLOps.
+              Ouvert aux opportunités freelance et CDI en Data Engineering, Data Science et
+              MLOps.
             </p>
           </div>
 
-          <div className="space-y-4">
-            {links.map(({ icon: Icon, label, value, href }) => (
-              <a
-                key={label}
-                href={href}
-                target={href.startsWith("http") ? "_blank" : undefined}
-                rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
-                className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-all hover:border-primary hover:shadow-sm"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium">{label}</div>
-                  <div className="text-xs text-muted-foreground">{value}</div>
-                </div>
-              </a>
-            ))}
-          </div>
-        </motion.div>
+          {links.map(({ icon: Icon, label, value, href }) => (
+            <a
+              key={label}
+              href={href}
+              target={href.startsWith("http") ? "_blank" : undefined}
+              rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
+              className="flex flex-1 items-center gap-4 rounded-xl border border-border bg-card p-6 transition-all hover:border-primary hover:shadow-sm"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Icon className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold">{label}</div>
+                <div className="truncate text-sm text-muted-foreground">{value}</div>
+              </div>
+            </a>
+          ))}
+        </div>
       </div>
     </div>
   )

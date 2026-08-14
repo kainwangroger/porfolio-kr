@@ -85,6 +85,13 @@ export default async function About() {
     "Agile Project Management and Scrum — OpenClassrooms",
   ]
 
+  const interests = [
+    { label: "Sports", value: "Basketball, Football" },
+    { label: "Musique", value: "Gospel" },
+    { label: "Voyages", value: "Tchad, Cameroun, Nigeria, Bénin, Togo, Ghana" },
+    { label: "Permis", value: "Catégorie B" },
+  ]
+
   const languages = [
     { name: "Français", level: "C1 — Courant / Excellente maîtrise" },
     { name: "Anglais", level: "A2 — Élémentaire / Communication de base" },
@@ -99,8 +106,9 @@ export default async function About() {
         className="mb-12"
       />
 
-      {/* Profil & Compétences */}
-      <div className="mb-16 grid gap-8 lg:grid-cols-2">
+      {/* Profil & Compétences — empilés : le profil se lit d'abord, les
+          compétences profitent ensuite de toute la largeur. */}
+      <div className="mb-16 space-y-12">
         <div>
           <h2 className="mb-4 text-xl font-semibold text-foreground">Profil Professionnel</h2>
           <p className="mb-4 text-muted-foreground leading-relaxed">
@@ -220,18 +228,23 @@ export default async function About() {
         ))}
       </div>
 
-      {/* Langues & Centres d'intérêt */}
-      <div className="grid gap-8 md:grid-cols-2">
+      {/* Langues & Centres d'intérêt — empilés, comme le reste de la page */}
+      <div className="space-y-12">
         <div>
           <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-foreground">
             <Globe className="h-5 w-5 text-primary" />
             Langues
           </h2>
-          <div className="space-y-3">
+          {/* En pleine largeur, une pile de cartes paraîtrait étirée : les
+              langues passent côte à côte à partir de sm. */}
+          <div className="grid gap-3 sm:grid-cols-3">
             {languages.map((lang) => (
-              <div key={lang.name} className="rounded-lg border border-border bg-card p-3 shadow-sm">
-                <span className="font-bold text-foreground text-sm">{lang.name}</span>
-                <span className="ml-2 text-xs text-muted-foreground">— {lang.level}</span>
+              <div
+                key={lang.name}
+                className="rounded-lg border border-border bg-card p-4 shadow-sm"
+              >
+                <div className="text-sm font-bold text-foreground">{lang.name}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{lang.level}</div>
               </div>
             ))}
           </div>
@@ -242,11 +255,16 @@ export default async function About() {
             <Heart className="h-5 w-5 text-primary" />
             Centres d&apos;intérêt
           </h2>
-          <div className="rounded-lg border border-border bg-card p-5 shadow-sm space-y-2 text-sm text-muted-foreground">
-            <p><strong className="text-foreground">Sports :</strong> Basketball, Football</p>
-            <p><strong className="text-foreground">Musique :</strong> Gospel</p>
-            <p><strong className="text-foreground">Voyages :</strong> Tchad, Cameroun, Nigeria, Bénin, Togo, Ghana</p>
-            <p><strong className="text-foreground">Permis :</strong> Catégorie B</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {interests.map((item) => (
+              <div
+                key={item.label}
+                className="rounded-lg border border-border bg-card p-4 shadow-sm"
+              >
+                <div className="text-sm font-bold text-foreground">{item.label}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{item.value}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
