@@ -1,5 +1,6 @@
 "use client"
 
+import { cacheTagFor } from "./api"
 import type { BlogPost, PortfolioEvent, Project, Skill } from "./api"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api/v1"
@@ -9,6 +10,30 @@ function getHeaders() {
   return {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
+/**
+ * Purge le cache de la ressource modifiée.
+ *
+ * Les pages publiques sont régénérées toutes les heures ; sans cet appel, une
+ * modification faite ici n'apparaîtrait qu'au bout d'une heure. L'échec n'est
+ * pas remonté à l'utilisateur : l'enregistrement, lui, a bien eu lieu, et la
+ * régénération horaire finira par rattraper le retard.
+ */
+async function revalidate(endpoint: string) {
+  const tag = cacheTagFor(endpoint)
+  if (!tag) return
+
+  try {
+    await fetch("/api/revalidate", {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ tag }),
+    })
+  } catch {
+    // Purge impossible : le contenu reste servi depuis le cache jusqu'à la
+    // prochaine régénération.
   }
 }
 
@@ -26,6 +51,13 @@ async function fetcher<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const err = await res.json().catch(() => ({ detail: res.statusText }))
     throw new Error(err.detail || "API error")
   }
+
+  // Toute écriture réussie invalide le cache public correspondant.
+  const method = options?.method ?? "GET"
+  if (method !== "GET") {
+    await revalidate(endpoint)
+  }
+
   if (res.status === 204) return undefined as T
   return res.json()
 }
