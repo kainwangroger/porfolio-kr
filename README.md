@@ -92,8 +92,9 @@ graph TB
 | **Authentification** | JWT (python-jose) | 3.3.0 |
 | | bcrypt (passlib) | 1.7.4 |
 | **Déploiement** | Vercel | Frontend |
-| | Render | Backend |
+| | Railway (ou Render) | Backend |
 | | Neon | PostgreSQL (gratuit) |
+| **CI** | GitHub Actions | ruff, pytest, tsc, eslint, `next build` |
 | **Conteneurs** | Docker + Docker Compose | — |
 
 ---
@@ -273,20 +274,22 @@ porfolio-kr/
 
 ## Déploiement
 
-| Service | URL | Rôle |
-|---------|-----|------|
-| Frontend | Vercel | Application Next.js |
-| Backend | Render | API FastAPI |
-| Base de données | Neon | PostgreSQL gratuit |
+| Service | Plateforme | Rôle |
+|---------|-----------|------|
+| Frontend | Vercel | Application Next.js (ISR + revalidation à la demande) |
+| Backend | Railway — ou Render Free | API FastAPI (`backend/Dockerfile`) |
+| Base de données | Neon | PostgreSQL 16 |
 
 ### Étapes
 
-1. **Neon** : Créer une base PostgreSQL et récupérer l'URI
-2. **Render** : Déployer le backend avec `DATABASE_URL` et `SECRET_KEY`
-3. **Vercel** : Déployer le frontend avec `NEXT_PUBLIC_API_URL` pointant vers Render
-4. **Seed** : `curl -X POST https://ton-backend.onrender.com/api/v1/seed`
+1. **Neon** : créer une base PostgreSQL et récupérer l'URI (`?sslmode=require`)
+2. **Railway** : déployer `backend` avec `DATABASE_URL`, `SECRET_KEY`, `DEBUG=False`, `CORS_ORIGINS`
+3. **Vercel** : déployer `frontend` avec `NEXT_PUBLIC_API_URL` et `NEXT_PUBLIC_SITE_URL`
+4. **Seed** : `ADMIN_PASSWORD=... python seed.py`, puis `seed_events.py` et `import_github.py`
 
-Voir `DEPLOY.md` pour les détails complets.
+Le build Next.js interroge l'API : déployer le backend avant le frontend.
+
+Voir [DEPLOIEMENT.md](DEPLOIEMENT.md) pour le pas-à-pas, la variante 0 € et la checklist.
 
 ---
 

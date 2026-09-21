@@ -19,6 +19,8 @@ env/
 
 # Tests et cache
 .pytest_cache/
+.ruff_cache/
+tests/
 .coverage
 htmlcov/
 
@@ -28,10 +30,6 @@ htmlcov/
 
 # Alembic (on ne copie pas les migrations dans l'image)
 # alembic/versions/
-
-# Scripts locaux
-seed.py
-import_github.py
 
 # Env
 .env
