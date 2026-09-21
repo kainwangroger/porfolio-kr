@@ -1,613 +1,176 @@
-# Guide de Déploiement — Portfolio KAINWANG Roger
+# Guide de déploiement — Portfolio KAINWANG Roger
 
-Guide complet de déploiement avec 5 options, de la plus simple à la plus avancée.
-
----
-
-## Table des matières
-
-1. [Évaluation du projet](#1-évaluation-du-projet)
-2. [Option 1 : Vercel + Render + Neon (Gratuit — Recommandé)](#option-1-vercel--render--neon-gratuit--recommandé)
-3. [Option 2 : Vercel + Railway + Supabase](#option-2-vercel--railway--supabase)
-4. [Option 3 : VPS (Hetzner/OVH) + Docker Compose](#option-3-vps-hetznerovh--docker-compose)
-5. [Option 4 : AWS (Production Enterprise)](#option-4-aws-production-enterprise)
-6. [Option 5 : Azure (Gratuit pour étudiants)](#option-5-azure-gratuit-pour-étudiants)
-7. [Checklist avant déploiement](#7-checklist-avant-déploiement)
-8. [Améliorations recommandées](#8-améliorations-recommandées)
-
----
-
-## 1. Évaluation du projet
-
-### État actuel
-
-| Critère | Statut | Détail |
-|---------|--------|--------|
-| Code fonctionnel | ✅ | Frontend + Backend opérationnels en local |
-| Docker | ✅ | docker-compose.yml fonctionnel |
-| Base de données | ⚠️ | SQLite (dev) / PostgreSQL (Docker) — pas de migrations Alembic en place |
-| Authentification | ✅ | JWT fonctionnel |
-| API REST | ✅ | CRUD complet projets, skills, blog, contact, stats |
-| CI/CD | ❌ | Pas de pipeline CI/CD |
-| Variables d'environnement | ⚠️ | `.env` en dur, pas de gestion des secrets en prod |
-| Tests | ❌ | Pas de tests unitaires ni d'intégration |
-| Monitoring | ❌ | Pas de health check externe |
-| Documentation API | ✅ | Swagger/ReDoc via FastAPI |
-| HTTPS | ❌ | Pas configuré (nécessaire en prod) |
-| CORS | ⚠️ | Configuré pour localhost, pas pour la prod |
-| Error handling | ⚠️ | Basique, pas de logging structuré |
-| SEO | ✅ | Meta tags configurés dans layout.tsx |
-| Responsive | ✅ | Mobile-first avec Tailwind |
-| Performance | ⚠️ | Pas d'optimisation d'images, pas de lazy loading avancé |
-
-### Verdict
-
-**Le projet est déployable** pour un portfolio personnel. Pour un projet en production enterprise, il manque des éléments (tests, CI/CD, monitoring, error handling).
-
----
-
-## Option 1 : Vercel + Render + Neon (Gratuit — Recommandé)
-
-Architecture la plus simple et gratuite.
+Architecture cible :
 
 ```
-Frontend (Vercel)  →  Backend (Render)  →  PostgreSQL (Neon)
-     Port 443              Port 8000              Port 5432
+Navigateur ──HTTPS──▶ Frontend Next.js (Vercel)
+                          │  NEXT_PUBLIC_API_URL
+                          ▼
+                      Backend FastAPI (Render Free)
+                          │  DATABASE_URL
+                          ▼
+                      PostgreSQL 16 (Neon)
 ```
 
-### Étape 1 : Base de données — Neon (gratuit)
+Le frontend est prérendu (ISR, 1 h) et purge son cache à chaque écriture
+depuis le back-office via `POST /api/revalidate`. Le backend n'est donc
+sollicité qu'au build, à la revalidation, et pour le back-office : c'est ce
+qui rend un hébergement modeste suffisant.
 
-1. Créer un compte sur https://neon.tech
-2. Créer un projet
-3. Récupérer l'URI de connexion :
+---
+
+## 1. État du projet
+
+| Critère | Statut |
+|---|---|
+| Migrations Alembic | ✅ `001_initial_schema`, `002_events`, appliquées au démarrage du conteneur |
+| Tests | ✅ 58 tests pytest, `ruff` propre |
+| CI | ✅ `.github/workflows/ci.yml` — ruff, pytest, tsc, eslint, `next build` |
+| Sécurité | ✅ `SECRET_KEY` obligatoire (≥ 32 car.), admin sans mot de passe en dur, rate limiting, Markdown assaini |
+| Health check | ✅ `GET /api/v1/health` vérifie la base |
+| SEO | ✅ `sitemap.xml`, `robots.txt`, un `h1` par page |
+| Docker | ✅ `backend/Dockerfile` (honore `$PORT`) ; pas de Dockerfile frontend (inutile sur Vercel) |
+| Config prod | ⚠️ `DEBUG` vaut `True` par défaut : le forcer à `False` |
+
+**Le build Next.js échoue si l'API ne répond pas.** C'est voulu (une panne ne
+doit pas passer pour un catalogue vide), mais ça impose de déployer le
+backend *avant* le frontend, et de le garder éveillé.
+
+---
+
+## 2. Déploiement retenu : Vercel + Render Free + Neon (0 €/mois)
+
+### 2.1 Base de données — Neon
+
+1. https://neon.tech → **New project** (région `eu-central-1`, Postgres 16).
+2. Copier l'URI de connexion, avec `?sslmode=require` :
    ```
-   postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
+   postgresql://user:motdepasse@ep-xxx.eu-central-1.aws.neon.tech/neondb?sslmode=require
    ```
 
-### Étape 2 : Backend — Render (gratuit)
+### 2.2 Backend — Render
 
-1. Créer un compte sur https://render.com
-2. **New +** → **Web Service**
-3. Connecter le dépôt GitHub `kainwangroger/porfolio-kr`
-4. Configurer :
+1. https://render.com → **New → Blueprint** → choisir `kainwangroger/porfolio-kr`.
+   Render lit `render.yaml` : service Docker, répertoire `backend`, région
+   Frankfurt, plan free, health check `/api/v1/health`.
+2. Render demande les variables marquées `sync: false` ; `SECRET_KEY` est
+   générée automatiquement (64 caractères) et `DEBUG` vaut déjà `False` :
 
-| Paramètre | Valeur |
-|-----------|--------|
-| Name | `porfolio-kr-api` |
-| Region | Oregon (US West) ou Frankfurt (EU) |
-| Root Directory | `backend` |
-| Runtime | Python 3 |
-| Build Command | `pip install -r requirements.txt` |
-| Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+   | Variable | Valeur |
+   |---|---|
+   | `DATABASE_URL` | l'URI Neon |
+   | `CORS_ORIGINS` | `["https://porfolio-kr.vercel.app"]` — à compléter après 2.3 |
+   | `RESEND_API_KEY` | clé Resend (formulaire de contact) |
+   | `CONTACT_EMAIL_TO` | adresse de réception |
+   | `GITHUB_TOKEN` | PAT sans scope, évite le rate limit de l'API GitHub |
 
-5. Variables d'environnement :
+3. **Apply**. Le premier build prend ~3 min ; noter l'URL, ex.
+   `https://porfolio-kr-api.onrender.com`.
+4. Vérifier : `curl https://<api>/api/v1/health` → `{"status":"ok","database":"healthy"}`.
 
-```env
-DATABASE_URL=postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
-SECRET_KEY=<generer-avec-openssl-rand-hex-32>
-CORS_ORIGINS=["https://ton-nom.vercel.app"]
-DEBUG=False
-RESEND_API_KEY=<optionnel>
-CONTACT_EMAIL_TO=kainwangr@gmail.com
-```
+### 2.2 bis — Empêcher la mise en veille (obligatoire)
 
-6. **Create Web Service**
+Le plan free s'endort après 15 min sans requête : réveil ≈ 30–50 s, et un
+build Vercel lancé pendant le sommeil **échoue**. Les 750 h/mois offertes
+couvrent un service 24 h/24, il suffit donc de le solliciter régulièrement :
 
-> ⚠️ Render free tier met le service en veille après 15 min d'inactivité. Le premier appel prend ~30s.
+1. https://uptimerobot.com (gratuit) → **New Monitor**, type HTTP(s).
+2. URL : `https://<api>/api/v1/health`, intervalle 5 min.
+3. Le moniteur sert aussi d'alerte mail si l'API ou la base tombe.
 
-### Étape 3 : Frontend — Vercel (gratuit)
+### 2.3 Frontend — Vercel
 
-1. Créer un compte sur https://vercel.com
-2. **Add New** → **Project**
-3. Importer le dépôt `kainwangroger/porfolio-kr`
-4. Configurer :
+1. https://vercel.com → **Add New → Project** → importer le dépôt.
+2. **Root Directory** = `frontend`, preset Next.js (détecté).
+3. **Environment Variables** :
 
-| Paramètre | Valeur |
-|-----------|--------|
-| Root Directory | `frontend` |
-| Framework Preset | Next.js |
+   | Variable | Valeur |
+   |---|---|
+   | `NEXT_PUBLIC_API_URL` | `https://<api>/api/v1` |
+   | `NEXT_PUBLIC_SITE_URL` | `https://<projet>.vercel.app` (ou le domaine perso) |
 
-5. Variable d'environnement :
+4. **Deploy**. Puis reporter l'URL Vercel définitive dans `CORS_ORIGINS` côté
+   Render → **Environment** (le service redéploie tout seul).
 
-```env
-NEXT_PUBLIC_API_URL=https://porfolio-kr-api.onrender.com/api/v1
-```
+### 2.4 Initialiser les données (une seule fois)
 
-6. **Deploy**
-
-### Étape 4 : Initialiser les données
+Le plan free n'offre pas de shell dans le conteneur : on lance les scripts en
+local, contre la base Neon. Dans `backend/.env`, renseigner temporairement
+`DATABASE_URL` (l'URI Neon) et une `SECRET_KEY` quelconque de 32 caractères,
+puis :
 
 ```bash
-# Seed via l'API
-curl -X POST https://porfolio-kr-api.onrender.com/api/v1/seed
-
-# Ou modifier temporairement DATABASE_URL dans backend/.env
-# puis lancer : cd backend && python seed.py && python import_github.py
+cd backend
+ADMIN_USERNAME=admin ADMIN_EMAIL=kainwangr@gmail.com ADMIN_PASSWORD="$(openssl rand -base64 24)" python seed.py
+python seed_events.py      # HSIL Hackathon
+python import_github.py    # projets GitHub
 ```
 
-### Étape 5 : Domaine personnalisé (optionnel)
+Remettre ensuite `backend/.env` en configuration locale. Ne **pas** lancer
+`seed_demo_events.py` : ce sont des événements fictifs.
 
-1. Acheter un domaine (ex: `kainwangroger.com`)
-2. Sur Vercel : Settings → Domains → Ajouter le domaine
-3. Configurer les DNS chez le registrar pour pointer vers Vercel
+### 2.5 Vérifications
 
-### Coût
-
-| Service | Plan | Coût |
-|---------|------|------|
-| Vercel | Hobby | Gratuit |
-| Render | Free | Gratuit |
-| Neon | Free | Gratuit |
-| **Total** | | **0 €/mois** |
+- [ ] `/` , `/projects`, `/evenements`, `/about` s'affichent avec le contenu
+- [ ] Formulaire `/contact` → mail reçu
+- [ ] `/admin/login` → créer un projet → visible sur `/projects` au rechargement
+      suivant (revalidation, pas d'attente d'1 h)
+- [ ] `/sitemap.xml` et `/robots.txt` pointent vers le bon domaine
+- [ ] Thème sombre/clair, mobile
 
 ---
 
-## Option 2 : Vercel + Railway + Supabase
+## 3. Montée en gamme : Railway (~5 €/mois)
 
-Plus fiable que l'option 1 (pas de veille sur Railway).
+Si le réveil ou la limite des 750 h devient gênant, remplacer Render par
+Railway — pas de mise en veille, shell dans le conteneur :
 
-```
-Frontend (Vercel)  →  Backend (Railway)  →  PostgreSQL (Supabase)
-```
+1. https://railway.app → **New Project → Deploy from GitHub repo**.
+2. **Settings → Root Directory** = `backend` ; Railway lit `backend/railway.json`.
+3. Mêmes variables qu'en 2.2, plus `SECRET_KEY` (`openssl rand -hex 32`) et
+   `DEBUG=False`.
+4. **Networking → Generate Domain**, puis mettre à jour `NEXT_PUBLIC_API_URL`
+   sur Vercel.
 
-### Étape 1 : Base de données — Supabase
-
-1. Créer un compte sur https://supabase.com
-2. Créer un projet
-3. Récupérer l'URI : `postgresql://postgres:password@db.xxx.supabase.co:5432/postgres`
-
-### Étape 2 : Backend — Railway
-
-1. Créer un compte sur https://railway.app
-2. **New Project** → **Deploy from GitHub**
-3. Sélectionner le dépôt
-4. Configurer le **Root Directory** : `backend`
-5. Variables d'environnement (même que l'option 1 avec l'URI Supabase)
-6. Railway offre $5 de crédit gratuit par mois
-
-### Étape 3 : Frontend — Vercel
-
-Même procédure que l'option 1.
-
-### Coût
-
-| Service | Plan | Coût |
-|---------|------|------|
-| Vercel | Hobby | Gratuit |
-| Railway | Trial | ~0-5 €/mois |
-| Supabase | Free | Gratuit |
-| **Total** | | **0-5 €/mois** |
+Le seed peut alors se faire via la CLI : `railway run python seed.py`.
 
 ---
 
-## Option 3 : VPS (Hetzner/OVH) + Docker Compose
+## 4. Option VPS (Hetzner CX22, ~4 €/mois)
 
-Tout sur un seul serveur. Contrôle total.
-
-```
-VPS (Hetzner) → Docker Compose → Frontend + Backend + PostgreSQL + Nginx
-```
-
-### Étape 1 : Créer un VPS
-
-1. Créer un compte sur https://hetzner.com (ou https://ovh.com)
-2. Créer un Cloud Server :
-
-| Paramètre | Valeur |
-|-----------|--------|
-| Type | CPX21 (2 vCPU, 4 GB RAM) |
-| OS | Ubuntu 22.04 |
-| Région | Nuremberg ou Helsinki |
-| Coût | ~4.5 €/mois |
-
-3. Configurer SSH :
-```bash
-ssh root@<IP_DU_VPS>
-```
-
-### Étape 2 : Installer Docker
-
-```bash
-# Installer Docker
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker $USER
-newgrp docker
-
-# Installer Docker Compose
-sudo apt install docker-compose-plugin -y
-```
-
-### Étape 3 : Cloner le projet
-
-```bash
-cd /opt
-git clone https://github.com/kainwangroger/porfolio-kr.git
-cd porfolio-kr
-```
-
-### Étape 4 : Configurer les variables d'environnement
-
-```bash
-# Backend
-cat > backend/.env << 'EOF'
-DATABASE_URL=postgresql://postgres:postgres@db:5432/porfolio
-SECRET_KEY=$(openssl rand -hex 32)
-CORS_ORIGINS=["https://kainwangroger.com","https://www.kainwangroger.com"]
-DEBUG=False
-RESEND_API_KEY=
-CONTACT_EMAIL_TO=kainwangr@gmail.com
-EOF
-
-# Frontend
-cat > frontend/.env.local << 'EOF'
-NEXT_PUBLIC_API_URL=https://api.kainwangroger.com/api/v1
-EOF
-```
-
-### Étape 5 : Créer docker-compose.prod.yml
-
-```yaml
-# docker-compose.prod.yml
-services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=https://api.kainwangroger.com/api/v1
-    restart: always
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/porfolio
-      - SECRET_KEY=${SECRET_KEY}
-      - CORS_ORIGINS=["https://kainwangroger.com"]
-      - DEBUG=False
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: always
-
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: porfolio
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: always
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/ssl:/etc/nginx/ssl
-    depends_on:
-      - frontend
-      - backend
-    restart: always
-
-volumes:
-  pgdata:
-```
-
-### Étape 6 : Configurer Nginx
-
-```bash
-mkdir -p nginx/ssl
-
-cat > nginx/nginx.conf << 'EOF'
-events {}
-http {
-    upstream frontend {
-        server frontend:3000;
-    }
-    upstream backend {
-        server backend:8000;
-    }
-
-    server {
-        listen 80;
-        server_name kainwangroger.com www.kainwangroger.com;
-
-        location / {
-            proxy_pass http://frontend;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location /api/ {
-            proxy_pass http://backend;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-    }
-}
-EOF
-```
-
-### Étape 7 : SSL avec Certbot
-
-```bash
-# Installer Certbot
-sudo apt install certbot python3-certbot-nginx -y
-
-# Obtenir le certificat
-sudo certbot --nginx -d kainwangroger.com -d www.kainwangroger.com
-
-# Auto-renewal
-sudo crontab -e
-# Ajouter : 0 12 * * * /usr/bin/certbot renew --quiet
-```
-
-### Étape 8 : Lancer
-
-```bash
-docker compose -f docker-compose.prod.yml up -d --build
-
-# Initialiser la base
-docker compose -f docker-compose.prod.yml exec backend python seed.py
-docker compose -f docker-compose.prod.yml exec backend python import_github.py
-```
-
-### Étape 9 : DNS
-
-Chez votre registrar, configurer :
-
-| Type | Nom | Valeur |
-|------|-----|--------|
-| A | @ | <IP_DU_VPS> |
-| A | www | <IP_DU_VPS> |
-| A | api | <IP_DU_VPS> |
-
-### Coût
-
-| Service | Coût |
-|---------|------|
-| VPS Hetzner CPX21 | 4.50 €/mois |
-| Domaine | ~10 €/an |
-| **Total** | **~5 €/mois** |
+Pour tout héberger soi-même (Nginx + Certbot + Docker Compose). Nécessite en
+plus un `frontend/Dockerfile` (`output: "standalone"` dans `next.config.ts`)
+et un `docker-compose.prod.yml` sans `--reload` ni montage de volume source.
+À ne choisir que pour la valeur pédagogique : le chemin le plus court reste
+l'option 2.
 
 ---
 
-## Option 4 : AWS (Production Enterprise)
+## 5. Domaine personnalisé (optionnel)
 
-Pour une mise en production sérieuse avec haute disponibilité.
-
-```
-CloudFront + S3 (Frontend) → ALB → ECS/Fargate (Backend) → RDS PostgreSQL
-```
-
-### Architecture
-
-```
-Utilisateur → Route 53 → CloudFront → S3 (Frontend Next.js)
-                                  ↓
-                               ALB → ECS Fargate (Backend FastAPI)
-                                          ↓
-                                      RDS PostgreSQL
-```
-
-### Étape 1 : Infrastructure avec Terraform
-
-```hcl
-# infrastructure/main.tf
-provider "aws" {
-  region = "eu-west-1"
-}
-
-# VPC
-module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "5.0.0"
-  name = "portfolio-vpc"
-  cidr = "10.0.0.0/16"
-  azs = ["eu-west-1a", "eu-west-1b"]
-  private_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
-  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24"]
-  enable_nat_gateway = true
-}
-
-# RDS PostgreSQL
-resource "aws_db_instance" "portfolio" {
-  identifier = "portfolio-db"
-  engine = "postgres"
-  engine_version = "16"
-  instance_class = "db.t3.micro"
-  allocated_storage = 20
-  db_name = "porfolio"
-  username = "admin"
-  password = var.db_password
-  skip_final_snapshot = true
-}
-
-# ECS Cluster
-resource "aws_ecs_cluster" "portfolio" {
-  name = "portfolio-cluster"
-}
-
-# ECR Repository
-resource "aws_ecr_repository" "backend" {
-  name = "portfolio-backend"
-}
-```
-
-### Étape 2 : Déployer le frontend sur S3 + CloudFront
-
-```bash
-# Build le frontend
-cd frontend
-npm run build
-
-# Créer un bucket S3
-aws s3 mb s3://kainwangroger-frontend
-
-# Sync les fichiers
-aws s3 sync .next/static s3://kainwangroger-frontend/_next/static
-aws s3 sync public s3://kainwangroger-frontend
-
-# Activer le hosting web
-aws s3 website s3://kainwangroger-frontend --index-document index.html --error-document 404.html
-```
-
-### Coût estimé
-
-| Service | Coût mensuel |
-|---------|-------------|
-| RDS db.t3.micro | ~12 €/mois |
-| ECS Fargate | ~5-15 €/mois |
-| CloudFront | ~1-5 €/mois |
-| S3 | ~0.50 €/mois |
-| **Total** | **~20-35 €/mois** |
+1. Vercel → **Settings → Domains** → ajouter `kainwangroger.com` ; suivre les
+   enregistrements DNS indiqués (A ou CNAME).
+2. Mettre à jour `NEXT_PUBLIC_SITE_URL` (Vercel) et `CORS_ORIGINS` (Render).
+3. Pour l'API, un sous-domaine `api.kainwangroger.com` se configure dans
+   Render → **Settings → Custom Domains** (CNAME).
 
 ---
 
-## Option 5 : Azure (Gratuit pour étudiants)
+## 6. Checklist finale
 
-Microsoft offre 200$ de crédit gratuit + services gratuits.
+### Bloquant
+- [ ] Moniteur UptimeRobot sur `/api/v1/health` toutes les 5 min (Render Free)
+- [ ] `fix/frontend-audit` fusionnée dans `main` (Vercel et Render déploient `main`)
+- [ ] `DEBUG=False` sur le backend
+- [ ] `SECRET_KEY` de 64 caractères, jamais commitée
+- [ ] `CORS_ORIGINS` = URL exacte du frontend (schéma + hôte, sans `/` final)
+- [ ] Mot de passe admin fort passé via `ADMIN_PASSWORD` au seed
+- [ ] Backend en ligne **avant** le premier build Vercel
 
-### Étape 1 : Créer un compte Azure
-
-1. Créer un compte sur https://portal.azure.com
-2. Activer les 200$ de crédit gratuit
-3. (Optionnel) Vérifier le statut étudiant pour 100$ de plus via https://azure.microsoft.com/free/students/
-
-### Étape 2 : Déployer le backend sur Azure App Service
-
-```bash
-# Installer Azure CLI
-curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-az login
-
-# Créer un groupe de ressources
-az group create --name portfolio-rg --location westeurope
-
-# Créer un App Service Plan
-az appservice plan create --name portfolio-plan --resource-group portfolio-rg --sku B1
-
-# Créer l'App Service
-az webapp create --name portfolio-api --resource-group portfolio-rg --plan portfolio-plan --runtime "PYTHON:3.12"
-
-# Configurer les variables d'environnement
-az webapp config appsettings set --name portfolio-api --resource-group portfolio-rg \
-  --settings DATABASE_URL="postgresql://..." SECRET_KEY="..." CORS_ORIGINS='["https://..."]'
-```
-
-### Étape 3 : Base de données Azure Database for PostgreSQL
-
-```bash
-az postgres server create --name portfolio-db --resource-group portfolio-rg \
-  --location westeurope --sku-name B_Gen5_1 --storage-size 5128 \
-  --admin-user admin --admin-password MonPass123!
-```
-
-### Coût estimé
-
-| Service | Coût mensuel |
-|---------|-------------|
-| Azure App Service B1 | ~12 €/mois |
-| Azure Database for PostgreSQL | ~12 €/mois |
-| **Total (avec crédit gratuit)** | **0 € les premiers mois** |
+### Recommandé
+- [ ] Domaine personnalisé
+- [ ] Analytics (Vercel Analytics est en un clic, ou Umami/Plausible)
 
 ---
 
-## 7. Checklist avant déploiement
-
-### Critique (bloquant)
-
-- [ ] Générer un `SECRET_KEY` sécurisé : `openssl rand -hex 32`
-- [ ] Configurer `DATABASE_URL` vers PostgreSQL (pas SQLite)
-- [ ] Configurer `CORS_ORIGINS` avec l'URL du frontend en production
-- [ ] Configurer `NEXT_PUBLIC_API_URL` avec l'URL du backend en production
-- [ ] Changer le mot de passe admin (`admin123` → mot de passe fort)
-- [ ] Activer HTTPS
-
-### Important
-
-- [ ] Seed la base de données (admin, skills, projets)
-- [ ] Importer les projets GitHub (`import_github.py`)
-- [ ] Vérifier que le CV se télécharge correctement
-- [ ] Tester le formulaire contact
-- [ ] Vérifier le thème sombre/clair
-- [ ] Tester sur mobile
-
-### Optionnel mais recommandé
-
-- [ ] Configurer un domaine personnalisé
-- [ ] Ajouter Google Analytics ou Umami
-- [ ] Configurer un health check monitoring
-- [ ] Ajouter des headers de sécurité (HSTS, CSP)
-- [ ] Optimiser les images (Next.js Image component)
-- [ ] Ajouter un sitemap.xml
-- [ ] Ajouter un robots.txt
-
----
-
-## 8. Améliorations recommandées
-
-### Priorité haute
-
-| Améliation | Détail | Impact |
-|------------|--------|--------|
-| **Migrations Alembic** | Pas de migrations en place. Les tables sont créées via `create_all()`. En prod, il faut des migrations pour évoluer le schéma. | Fiabilité |
-| **Tests** | Aucun test unitaire ou d'intégration. Ajouter pytest pour le backend. | Qualité |
-| **Secrets management** | Le `SECRET_KEY` est en dur dans `.env`. Utiliser les secrets du cloud provider. | Sécurité |
-| **Rate limiting** | Pas de protection contre le brute force sur `/auth/login`. Ajouter slowapi ou nginx rate limiting. | Sécurité |
-| **Logging structuré** | Pas de logging centralisé. Ajouter structlog ou JSON logging. | Observabilité |
-
-### Priorité moyenne
-
-| Améliation | Détail | Impact |
-|------------|--------|--------|
-| **CI/CD** | Pas de pipeline. Ajouter GitHub Actions pour les tests et le déploiement automatique. | Productivité |
-| **Health check** | Ajouter un endpoint `/health` plus détaillé (vérifier la DB). | Monitoring |
-| **Error handling** | Les erreurs API sont basiques. Ajouter des erreurs structurées. | UX |
-| **Image optimization** | Utiliser `next/image` pour optimiser les images. | Performance |
-| **SEO** | Ajouter sitemap.xml, robots.txt, meta tags dynamiques. | Visibilité |
-
-### Priorité basse
-
-| Améliation | Détail | Impact |
-|------------|--------|--------|
-| **Cache** | Ajouter Redis pour cacher les réponses API. | Performance |
-| **CDN** | Utiliser CloudFront ou Cloudflare pour le cache static. | Performance |
-| **Analytics** | Intégrer Umami ou Plausible pour le tracking. | Insights |
-| **Contact email** | Configurer Resend pour l'envoi d'emails. | Fonctionnalité |
-
----
-
-## Résumé des options
-
-| Option | Difficulté | Coût | Fiabilité | Recommandé pour |
-|--------|-----------|------|-----------|-----------------|
-| **Vercel + Render + Neon** | ⭐ Facile | 0 €/mois | ⭐⭐ | Portfolio personnel |
-| **Vercel + Railway + Supabase** | ⭐ Facile | 0-5 €/mois | ⭐⭐⭐ | Portfolio + side projects |
-| **VPS Hetzner + Docker** | ⭐⭐ Moyen | 5 €/mois | ⭐⭐⭐ | Control total, apprenez DevOps |
-| **AWS** | ⭐⭐⭐ Complexe | 20-35 €/mois | ⭐⭐⭐⭐⭐ | Production enterprise |
-| **Azure** | ⭐⭐ Moyen | 0 € (crédit) | ⭐⭐⭐⭐ | Étudiants, POC |
-
-**Recommandation** : Commencez par l'**Option 1** (gratuit), puis migrez vers l'**Option 3** (VPS) quand vous voulez plus de contrôle.
-
----
-
-*Dernière mise à jour : Juillet 2026*
+*Dernière mise à jour : septembre 2026*

@@ -1,0 +1,29 @@
+# Blueprint Render (option 0 €) : https://render.com/docs/blueprint-spec
+# Dashboard → New → Blueprint → choisir ce dépôt. Render crée le service
+# ci-dessous et demande les valeurs marquées `sync: false`.
+#
+# Le plan free s'endort après 15 min d'inactivité : voir DEPLOIEMENT.md
+# pour le ping UptimeRobot, ou passer sur Railway (recommandé).
+services:
+  - type: web
+    name: porfolio-kr-api
+    runtime: docker
+    rootDir: backend
+    plan: free
+    region: frankfurt
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true # 64 caractères hex, > 32 exigés par config.py
+      - key: DATABASE_URL
+        sync: false # URI Neon, avec ?sslmode=require
+      - key: CORS_ORIGINS
+        sync: false # ex. ["https://porfolio-kr.vercel.app"]
+      - key: RESEND_API_KEY
+        sync: false
+      - key: CONTACT_EMAIL_TO
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false

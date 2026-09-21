@@ -5,7 +5,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 
-from app.api.v1 import auth, blog, contact, projects, skills, stats
+from app.api.v1 import auth, blog, contact, events, projects, skills, stats
 from app.core.config import settings
 from app.core.database import Base, engine, SessionLocal
 from app.core.rate_limit import limiter
@@ -47,6 +47,7 @@ app.include_router(contact.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(skills.router, prefix="/api/v1")
 app.include_router(stats.router, prefix="/api/v1")
+app.include_router(events.router, prefix="/api/v1")
 
 
 @app.get("/api/v1/health")

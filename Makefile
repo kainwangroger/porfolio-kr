@@ -1,4 +1,4 @@
-.PHONY: dev-frontend dev-backend dev-docker install-frontend install-backend migrate seed import-github import-github-docker test test-backend lint lint-backend
+.PHONY: dev-frontend dev-backend dev-docker install-frontend install-backend migrate seed seed-events seed-demo-events seed-demo-events-remove import-github import-github-docker clean-demo-urls clean-demo-urls-apply test test-backend test-frontend lint lint-backend lint-frontend build-frontend
 
 dev-frontend:
 	cd frontend && npm run dev -- --webpack --port 3003
@@ -21,8 +21,24 @@ migrate:
 seed:
 	cd backend && python seed.py
 
+seed-events:
+	cd backend && python seed_events.py
+
+# Événements fictifs, pour prévisualiser la page. À retirer avant mise en ligne.
+seed-demo-events:
+	cd backend && python seed_demo_events.py
+
+seed-demo-events-remove:
+	cd backend && python seed_demo_events.py --remove
+
 import-github:
 	cd backend && python import_github.py
+
+clean-demo-urls:
+	cd backend && python clean_demo_urls.py
+
+clean-demo-urls-apply:
+	cd backend && python clean_demo_urls.py --apply
 
 import-github-docker:
 	docker exec porfolio_kr-backend-1 python import_github.py
@@ -30,9 +46,18 @@ import-github-docker:
 test-backend:
 	cd backend && python -m pytest -v
 
-test: test-backend
+test-frontend:
+	cd frontend && npx tsc --noEmit
+
+test: test-backend test-frontend
 
 lint-backend:
 	cd backend && python -m ruff check .
 
-lint: lint-backend
+lint-frontend:
+	cd frontend && npx eslint
+
+lint: lint-backend lint-frontend
+
+build-frontend:
+	cd frontend && npm run build

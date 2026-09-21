@@ -1,16 +1,33 @@
-import Link from "next/link"
+import type { Metadata } from "next"
 
 import { SectionTitle } from "@/components/ui/SectionTitle"
+import { ProjectGrid } from "@/components/projects/ProjectGrid"
 import { api, Project } from "@/lib/api"
-import { projectImageUrl } from "@/lib/project-image"
+import { shouldShowOnProjectsPage } from "@/lib/projectGroups"
+
+/**
+ * Régénération toutes les heures. Le contenu bouge rarement ; sans cela chaque
+ * visite frappait l'API, y compris pendant le réveil d'un backend en veille.
+ */
+export const revalidate = 3600
+
+export const metadata: Metadata = {
+  title: "Projets",
+  description:
+    "Sélection de projets de KAINWANG Roger : pipelines de données, applications ML, visualisation et développement web full-stack.",
+  openGraph: {
+    title: "Projets | KAINWANG Roger",
+    description:
+      "Découvrez les projets data engineering et data science de KAINWANG Roger.",
+  },
+}
 
 export default async function Projects() {
-  let projects: Project[] = []
-  try {
-    projects = await api.projects.list()
-  } catch {
-    projects = []
-  }
+  // Aucun try/catch : une panne de l'API doit remonter à `error.tsx`, pas se
+  // déguiser en « aucun projet » — ce qui laisserait croire au visiteur que ce
+  // développeur n'a rien réalisé.
+  const allProjects = await api.projects.list()
+  const projects: Project[] = allProjects.filter(shouldShowOnProjectsPage)
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:py-20">
@@ -23,39 +40,7 @@ export default async function Projects() {
       {projects.length === 0 ? (
         <p className="text-center text-muted-foreground">Aucun projet pour le moment.</p>
       ) : (
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => (
-            <Link
-              key={project.slug}
-              href={`/projects/${project.slug}`}
-              className="group rounded-lg border border-border bg-card overflow-hidden transition-all hover:shadow-lg"
-            >
-              <div className="aspect-video bg-muted overflow-hidden">
-                <img
-                  src={projectImageUrl(project)}
-                  alt={project.title}
-                  className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                />
-              </div>
-              <div className="p-5">
-                <div className="mb-3 flex flex-wrap gap-1.5">
-                  {project.tech_stack.split(",").map((tag) => (
-                    <span key={tag.trim()} className="text-xs rounded-full border border-border px-2 py-0.5">
-                      {tag.trim()}
-                    </span>
-                  ))}
-                </div>
-                <h3 className="mb-2 font-semibold">{project.title}</h3>
-                <p className="mb-4 text-sm text-muted-foreground line-clamp-3">
-                  {project.description}
-                </p>
-                <span className="text-sm text-primary font-medium">
-                  Détails →
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <ProjectGrid projects={projects} />
       )}
     </div>
   )

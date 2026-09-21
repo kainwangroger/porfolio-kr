@@ -1,9 +1,33 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api/v1"
+
+/** Ressources publiques mises en cache, chacune invalidable séparément. */
+export const CACHE_TAGS = ["projects", "events", "skills", "blog"] as const
+export type CacheTag = (typeof CACHE_TAGS)[number]
+
+/**
+ * Étiquette de cache déduite du chemin appelé.
+ *
+ * Elle permet au back-office de vider exactement ce qu'il vient de modifier :
+ * enregistrer un événement ne doit pas faire regénérer la page projets.
+ */
+export function cacheTagFor(endpoint: string): CacheTag | null {
+  const resource = endpoint.replace(/^\//, "").split(/[/?]/)[0]
+  return (CACHE_TAGS as readonly string[]).includes(resource)
+    ? (resource as CacheTag)
+    : null
+}
 
 async function fetcher<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const tag = cacheTagFor(endpoint)
+  const isRead = !options?.method || options.method === "GET"
+
   const res = await fetch(`${API_BASE}${endpoint}`, {
     headers: { "Content-Type": "application/json", ...options?.headers },
     ...options,
+    // Les lectures publiques sont mises en cache et étiquetées. Sans
+    // étiquette, une modification depuis le back-office n'apparaîtrait
+    // qu'à la régénération horaire.
+    ...(isRead && tag ? { next: { revalidate: 3600, tags: [tag] } } : {}),
   })
   if (!res.ok) {
     throw new Error(`API error: ${res.status} ${res.statusText}`)
@@ -25,6 +49,10 @@ export const api = {
     list: () => fetcher<Project[]>("/projects"),
     featured: () => fetcher<Project[]>("/projects/featured"),
     get: (slug: string) => fetcher<Project>(`/projects/${slug}`),
+  },
+  events: {
+    list: () => fetcher<PortfolioEvent[]>("/events"),
+    get: (slug: string) => fetcher<PortfolioEvent>(`/events/${slug}`),
   },
   blog: {
     list: (skip = 0, limit = 20) =>
@@ -61,6 +89,36 @@ export interface Project {
   year: number
   created_at: string
   updated_at: string | null
+}
+
+/**
+ * Un événement : hackathon, conférence, école d'été.
+ *
+ * `images` contient une URL par ligne — voir `eventImages()` pour la lecture.
+ * Nommé `PortfolioEvent` et non `Event`, qui est déjà pris par le type DOM.
+ */
+export interface PortfolioEvent {
+  id: number
+  title: string
+  slug: string
+  organizer: string
+  location: string
+  period: string
+  role: string
+  description: string
+  images: string
+  link_url: string
+  sort_order: number
+  created_at: string
+  updated_at: string | null
+}
+
+/** Découpe le champ `images` en URLs exploitables. */
+export function eventImages(event: { images: string }): string[] {
+  return event.images
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
 }
 
 export interface BlogPost {

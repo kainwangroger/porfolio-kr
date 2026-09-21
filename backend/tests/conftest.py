@@ -1,3 +1,9 @@
+import os
+
+# Défini avant tout import de l'application : `Settings` est instanciée au
+# chargement du module et refuse désormais une clé absente ou trop courte.
+os.environ.setdefault("SECRET_KEY", "cle-de-test-uniquement-32-caracteres-minimum")
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine

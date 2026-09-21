@@ -1,6 +1,8 @@
 import httpx
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
+
+from app.core.rate_limit import limiter
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
@@ -20,7 +22,8 @@ def _get_or_create_stat(db: Session, key: str) -> Stat:
 
 
 @router.post("/page-visit", response_model=StatResponse)
-def track_page_visit(db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def track_page_visit(request: Request, db: Session = Depends(get_db)):
     stat = _get_or_create_stat(db, "page_visits")
     stat.value += 1
     db.commit()
@@ -29,7 +32,8 @@ def track_page_visit(db: Session = Depends(get_db)):
 
 
 @router.post("/cv-download", response_model=StatResponse)
-def track_cv_download(db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def track_cv_download(request: Request, db: Session = Depends(get_db)):
     stat = _get_or_create_stat(db, "cv_downloads")
     stat.value += 1
     db.commit()
@@ -46,7 +50,7 @@ def get_all_stats(
         s = db.query(Stat).filter(Stat.key == key).first()
         return s.value if s else 0
 
-    unread = db.query(ContactMessage).filter(ContactMessage.read == False).count()
+    unread = db.query(ContactMessage).filter(ContactMessage.read.is_(False)).count()
 
     return StatsResponse(
         page_visits=_val("page_visits"),
@@ -56,7 +60,7 @@ def get_all_stats(
 
 
 @router.get("/github")
-async def github_stats(username: str = "roger"):
+async def github_stats(username: str = "kainwangroger"):
     async with httpx.AsyncClient() as client:
         user_res = await client.get(f"https://api.github.com/users/{username}")
         repos_res = await client.get(

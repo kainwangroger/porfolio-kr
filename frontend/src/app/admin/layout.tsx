@@ -1,12 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
+
+import { useIsClient } from "@/lib/use-is-client"
 
 const navItems = [
   { label: "Dashboard", href: "/admin" },
   { label: "Projets", href: "/admin/projects" },
+  { label: "Événements", href: "/admin/events" },
   { label: "Compétences", href: "/admin/skills" },
   { label: "Messages", href: "/admin/messages" },
 ]
@@ -16,28 +19,26 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  const [ready, setReady] = useState(false)
-  const [authenticated, setAuthenticated] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
+  const isClient = useIsClient()
+
+  // Le jeton vit dans localStorage : il n'existe pas au rendu serveur. On lit
+  // donc pendant le rendu client plutôt que via un effet + setState, qui
+  // provoquait un rendu en cascade.
+  const authenticated = isClient && Boolean(localStorage.getItem("admin_token"))
 
   useEffect(() => {
-    const token = localStorage.getItem("admin_token")
-    if (!token && pathname !== "/admin/login") {
+    if (isClient && !authenticated && pathname !== "/admin/login") {
       router.replace("/admin/login")
-    } else {
-      setAuthenticated(!!token)
     }
-    setReady(true)
-  }, [pathname, router])
-
-  if (!ready) return null
+  }, [isClient, authenticated, pathname, router])
 
   if (pathname === "/admin/login") {
     return <>{children}</>
   }
 
-  if (!authenticated) return null
+  if (!isClient || !authenticated) return null
 
   return (
     <div className="mx-auto flex min-h-screen max-w-7xl px-4 py-8">
@@ -60,6 +61,8 @@ export default function AdminLayout({
           <button
             onClick={() => {
               localStorage.removeItem("admin_token")
+              // Supprime aussi le cookie utilisé par le middleware
+              document.cookie = "admin_token=; path=/; max-age=0; SameSite=Strict"
               router.replace("/admin/login")
             }}
             className="mt-4 rounded-lg px-4 py-2 text-left text-sm text-red-500 hover:bg-muted"

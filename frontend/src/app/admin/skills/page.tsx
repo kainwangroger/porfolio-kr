@@ -1,20 +1,25 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { adminApi } from "@/lib/admin-api"
+import { errorMessage } from "@/lib/utils"
+import type { Skill } from "@/lib/api"
 
 export default function AdminSkills() {
-  const [skills, setSkills] = useState<any[]>([])
+  const [skills, setSkills] = useState<Skill[]>([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ category: "", name: "" })
   const [error, setError] = useState("")
 
-  const load = () => {
-    setLoading(true)
+  // `loading` démarre à true et n'est remis à true nulle part : appeler
+  // setState de façon synchrone dans un effet provoque un rendu en cascade.
+  const load = useCallback(() => {
     adminApi.skills.list().then(setSkills).catch(() => {}).finally(() => setLoading(false))
-  }
+  }, [])
 
-  useEffect(load, [])
+  useEffect(() => {
+    load()
+  }, [load])
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,8 +32,8 @@ export default function AdminSkills() {
       await adminApi.skills.create({ category: form.category.trim(), name: form.name.trim() })
       setForm({ category: "", name: "" })
       load()
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(errorMessage(err, "Ajout impossible."))
     }
   }
 
@@ -37,12 +42,12 @@ export default function AdminSkills() {
     try {
       await adminApi.skills.delete(id)
       load()
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(errorMessage(err, "Suppression impossible."))
     }
   }
 
-  const grouped: Record<string, any[]> = {}
+  const grouped: Record<string, Skill[]> = {}
   for (const s of skills) {
     if (!grouped[s.category]) grouped[s.category] = []
     grouped[s.category].push(s)

@@ -1,14 +1,31 @@
 "use client"
 
 import { useState } from "react"
+import { errorMessage } from "@/lib/utils"
+import type { Project } from "@/lib/api"
+
+/** Champs du formulaire : le sous-ensemble éditable d'un projet. */
+type ProjectFormValues = Pick<
+  Project,
+  | "title"
+  | "slug"
+  | "description"
+  | "content"
+  | "tech_stack"
+  | "image_url"
+  | "github_url"
+  | "demo_url"
+  | "featured"
+  | "year"
+>
 
 interface Props {
-  onSave: (data: any) => Promise<void>
-  initial?: any
+  onSave: (data: ProjectFormValues) => Promise<void>
+  initial?: Partial<Project>
 }
 
 export default function ProjectForm({ onSave, initial }: Props) {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ProjectFormValues>({
     title: initial?.title || "",
     slug: initial?.slug || "",
     description: initial?.description || "",
@@ -29,14 +46,15 @@ export default function ProjectForm({ onSave, initial }: Props) {
     setSaving(true)
     try {
       await onSave(form)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(errorMessage(err, "Enregistrement impossible."))
     } finally {
       setSaving(false)
     }
   }
 
-  const update = (field: string, value: any) => setForm((f) => ({ ...f, [field]: value }))
+  const update = <K extends keyof ProjectFormValues>(field: K, value: ProjectFormValues[K]) =>
+    setForm((f) => ({ ...f, [field]: value }))
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

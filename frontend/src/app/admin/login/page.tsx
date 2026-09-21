@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { adminApi } from "@/lib/admin-api"
+import { errorMessage } from "@/lib/utils"
 
 export default function AdminLogin() {
   const [username, setUsername] = useState("")
@@ -17,10 +18,16 @@ export default function AdminLogin() {
     setLoading(true)
     try {
       const res = await adminApi.login(username, password)
+      // Stockage localStorage pour la compatibilité avec l'admin-api client
       localStorage.setItem("admin_token", res.access_token)
-      router.replace("/admin")
-    } catch (err: any) {
-      setError(err.message || "Erreur de connexion")
+      // Stockage cookie pour le middleware Next.js (protection côté serveur)
+      const maxAge = 60 * 60 * 24 // 24h
+      document.cookie = `admin_token=${res.access_token}; path=/; max-age=${maxAge}; SameSite=Strict`
+      const params = new URLSearchParams(window.location.search)
+      const next = params.get("next") || "/admin"
+      router.replace(next)
+    } catch (err) {
+      setError(errorMessage(err, "Erreur de connexion"))
     } finally {
       setLoading(false)
     }
