@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.core.database import Base
 
 # Import all models so they're registered with Base.metadata
+# ruff: noqa: F401 -- side-effect imports
 from app.models.user import User
 from app.models.project import Project
 from app.models.blog import BlogPost

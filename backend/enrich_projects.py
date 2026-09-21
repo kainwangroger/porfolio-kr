@@ -3,7 +3,6 @@ Script d'enrichissement automatique des descriptions et contenus des projets
 en téléchargeant et analysant leurs README.md depuis GitHub.
 """
 
-import time
 import httpx
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
@@ -255,7 +254,6 @@ def clean_markdown_headers(text: str) -> str:
     # Supprime les badges ou les liens de builds s'il y en a au début
     lines = text.split("\n")
     cleaned_lines = []
-    skip = False
     for line in lines:
         if line.strip().startswith("# ") or line.strip().startswith("=="):
             # On ignore le titre principal # Nom-du-projet pour ne pas faire doublon avec le titre de la page

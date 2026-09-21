@@ -50,7 +50,7 @@ def get_all_stats(
         s = db.query(Stat).filter(Stat.key == key).first()
         return s.value if s else 0
 
-    unread = db.query(ContactMessage).filter(ContactMessage.read == False).count()
+    unread = db.query(ContactMessage).filter(ContactMessage.read.is_(False)).count()
 
     return StatsResponse(
         page_visits=_val("page_visits"),

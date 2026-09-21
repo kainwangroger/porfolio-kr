@@ -1,6 +1,5 @@
 from app.core.security import hash_password
 from app.models.user import User
-from app.models.project import Project
 
 
 def _create_admin(db_session):
