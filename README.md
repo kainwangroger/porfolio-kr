@@ -92,7 +92,7 @@ graph TB
 | **Authentification** | JWT (python-jose) | 3.3.0 |
 | | bcrypt (passlib) | 1.7.4 |
 | **Déploiement** | Vercel | Frontend |
-| | Railway (ou Render) | Backend |
+| | Render (free) | Backend |
 | | Neon | PostgreSQL (gratuit) |
 | **CI** | GitHub Actions | ruff, pytest, tsc, eslint, `next build` |
 | **Conteneurs** | Docker + Docker Compose | — |
@@ -277,13 +277,13 @@ porfolio-kr/
 | Service | Plateforme | Rôle |
 |---------|-----------|------|
 | Frontend | Vercel | Application Next.js (ISR + revalidation à la demande) |
-| Backend | Railway — ou Render Free | API FastAPI (`backend/Dockerfile`) |
+| Backend | Render Free (`render.yaml`) | API FastAPI, maintenu éveillé par UptimeRobot |
 | Base de données | Neon | PostgreSQL 16 |
 
 ### Étapes
 
 1. **Neon** : créer une base PostgreSQL et récupérer l'URI (`?sslmode=require`)
-2. **Railway** : déployer `backend` avec `DATABASE_URL`, `SECRET_KEY`, `DEBUG=False`, `CORS_ORIGINS`
+2. **Render** : New → Blueprint (`render.yaml`), renseigner `DATABASE_URL` et `CORS_ORIGINS`, puis un moniteur UptimeRobot sur `/api/v1/health`
 3. **Vercel** : déployer `frontend` avec `NEXT_PUBLIC_API_URL` et `NEXT_PUBLIC_SITE_URL`
 4. **Seed** : `ADMIN_PASSWORD=... python seed.py`, puis `seed_events.py` et `import_github.py`
 
